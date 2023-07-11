@@ -14,7 +14,7 @@ export function themeControl() {
 
   function settingTheme() {
     prefersDark = !prefersDark
-    const dataTheme = prefersDark ? ThemeEnum.DARK : ThemeEnum.LIGHT
+    const dataTheme = !prefersDark ? ThemeEnum.DARK : ThemeEnum.LIGHT
     d3.select('html').attr('data-theme', dataTheme)
     d3.select('a.setting-theme')
       .select('i')
