@@ -120,10 +120,8 @@ export default defineComponent({
       settingControl.onAdd = () => {
         const settings = L.DomUtil.create('div', 'setting')
         const render = themeControl()
-        render(settings)
-        return settings
+        return render(settings)
       }
-
       settingControl.addTo(map)
 
       const legend = L.control({
@@ -332,8 +330,10 @@ export default defineComponent({
       font-size: 24px;
       line-height: 30px;
 
-      i {
-        color: var(--setting-theme-i-color);
+      img {
+        display: inline-block;
+        width: 30px;
+        height: auto;
       }
     }
   }
