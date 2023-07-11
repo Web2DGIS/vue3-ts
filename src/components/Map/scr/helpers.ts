@@ -111,11 +111,11 @@ export function layerInfo(feature: GeoJSON) {
 
   const info: any = {}
   if (geometry.type === GeometryTypeEnum.POLYGON) {
-    info.key = '面积: '
+    info.key = '面积'
     info.value = `${turf_Area(feature).toFixed(4)} m²`
   }
   if (geometry.type === GeometryTypeEnum.LINE_STRING) {
-    info.key = '长度: '
+    info.key = '长度'
     info.value = `${turf_Length(feature, { units: 'kilometers' }).toFixed(4)} 公里`
   }
   properties[info.key] = info.value
