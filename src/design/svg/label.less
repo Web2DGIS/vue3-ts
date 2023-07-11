@@ -1,0 +1,30 @@
+.labels-group.halo text {
+  stroke-width: 5px;
+  stroke: #fff;
+  opacity: .7;
+  stroke-miterlimit: 1;
+}
+
+text.arealabel-halo,
+text.linelabel-halo,
+text.pointlabel-halo,
+text.arealabel,
+text.linelabel,
+text.pointlabel {
+  transition: opacity 100ms linear;
+  fill: #333;
+  font-size: 12px;
+  font-weight: bold;
+  dominant-baseline: middle;
+  text-anchor: middle;
+}
+
+.linelabel-halo .textpath,
+.linelabel .textpath {
+  baseline-shift: -33%;
+  dominant-baseline: auto;
+}
+
+text.Point {
+  font-size: 10px;
+}
