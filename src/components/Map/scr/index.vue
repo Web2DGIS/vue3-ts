@@ -279,11 +279,11 @@ export default defineComponent({
 
 #map-container {
   position: absolute;
-  inset: 0;
   width: 100%;
   height: 100%;
   overflow: hidden;
   background: var(--map-bg-color);
+  inset: 0;
 
   &, .legend, .leaflet-control-scale-line, .leaflet-control-container a {
     transition: all .6s;
