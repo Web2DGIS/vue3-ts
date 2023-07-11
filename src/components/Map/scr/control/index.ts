@@ -1,0 +1,1 @@
+export { themeControl } from './themeControl'

@@ -1,0 +1,27 @@
+@import "./point.less";
+@import "./line.less";
+@import "./area.less";
+@import "./label.less";
+
+.svg-defs {
+  position: absolute;
+  width: 0;
+  height: 0;
+}
+
+.leaflet-overlay-pane path {
+  fill: none;
+}
+
+path.shadow.hover:not(.selected) {
+  stroke-opacity: .4;
+}
+
+path.area.hover,
+path.line.hover {
+  stroke-width: 16;
+  stroke-linecap: round;
+  stroke: #f6634f;
+  stroke-opacity: .4;
+  stroke-linejoin: round;
+}

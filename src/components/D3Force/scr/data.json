@@ -1,0 +1,25 @@
+{
+  "nodes": [
+    {
+      "id": "煤层"
+    },
+    {
+      "id": "工作面"
+    },
+    {
+      "id": "立井"
+    }
+  ],
+  "links": [
+    {
+      "source": "煤层",
+      "target": "工作面",
+      "type": "licensing"
+    },
+    {
+      "source": "工作面",
+      "target": "立井",
+      "type": "licensing"
+    }
+  ]
+}
