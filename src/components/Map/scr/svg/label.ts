@@ -248,17 +248,19 @@ export function svgLabels(projection: any, context: any) {
       }
     }
 
-    function getPointLabel(entity: any, width: number, height: number, geometry: string): any {
+    function getPointLabel(entity: any, width: any, height: number, geometry: string): any {
       const y = (geometry === GeometryTypeEnum.POINT ? -12 : 0)
       const pointOffsets: any = {
         ltr: [15, y, 'start'],
         rtl: [-15, y, 'end'],
       }
 
-      const coord = map.latLngToLayerPoint(L.latLng(
+      const latLng = L.latLng(
         entity.geometry.coordinates[1],
         entity.geometry.coordinates[0],
-      ))
+      )
+
+      const coord = map.latLngToLayerPoint(latLng)
 
       const textPadding = 2
       const offset = pointOffsets.ltr
@@ -283,8 +285,11 @@ export function svgLabels(projection: any, context: any) {
     }
 
     function getAreaLabel(entity: any, width: number, height: number) {
-      const centroid = path.centroid(entity)
       const area = L.GeoJSON.geometryToLayer(entity)
+      if (!map.getBounds().contains(area.getBounds().getCenter()))
+        return
+
+      const centroid = path.centroid(entity)
       const { _northEast, _southWest } = area.getBounds()
       const northEastXY = map.latLngToLayerPoint(_northEast)
       const southWestXY = map.latLngToLayerPoint(_southWest)
