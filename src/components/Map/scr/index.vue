@@ -269,14 +269,14 @@ export default defineComponent({
           wid: `typhoon-${enname}`,
         }
         let index = points.length - 1
-
+        let bindPopupCentext
         t.geometry.coordinates = points.map((point) => {
           let marker
-          let bindPopupCentext = `<p style=""><b>${name}</b> ${point.time}</p>
+          bindPopupCentext = `<p style=""><b>${name}</b> ${point.time}</p>
                 <p style="color: ${typhoonLevel[point.strong]}">${point.power}级(${point.strong})</p>
                 <p>纬度: ${Number(point.lat)} 经度: ${Number(point.lng)}</p>`
           if (index-- === 0) {
-            bindPopupCentext += ` <p>未来趋势: <b>${point.jl}</b></p>`
+            bindPopupCentext += `<p>未来趋势: <b>${point.jl}</b></p>`
             const icon = L.divIcon({
               html: `<img src="${typhoonGif}">`,
               iconSize: [40, 40],
@@ -285,7 +285,6 @@ export default defineComponent({
             marker = L.marker(L.latLng(Number(point.lat), Number(point.lng)), {
               icon,
             })
-              .bindTooltip(name, { permanent: true })
             const startAngle = [0, 90, 180, 270]
             const { radius7, radius10, radius12 } = point
 
@@ -331,12 +330,13 @@ export default defineComponent({
               weight: 6,
             })
           }
-
-          marker
-            .bindPopup(bindPopupCentext)
-            .addTo(_map)
+          marker.bindPopup(bindPopupCentext)
           unref(typhoonCenters).push(marker)
+
           return [Number(point.lng), Number(point.lat)]
+        })
+        unref(typhoonCenters).forEach((e) => {
+          e.addTo(_map)
         })
         typhoonGeoJSON.push(t)
       })

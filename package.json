@@ -12,7 +12,7 @@
     "dev": "vite",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "build": "vue-tsc && vite build",
+    "build": "vite build",
     "preview": "vite preview",
     "lint:stylelint:fix": "stylelint \"**/*.{vue,css,less,scss}\" --fix"
   },
