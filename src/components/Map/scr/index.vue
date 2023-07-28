@@ -18,7 +18,7 @@ import { GeometryTypeEnum } from '/@/enums/geometryTypeEnum'
 import { svgAreas, svgDefs, svgLabels, svgLines, svgPoints } from './svg'
 import { themeControl } from './control'
 
-import { geojson, typhoon, typhoonLevel } from '/@/data'
+import { geojson, typhoonLevel } from '/@/data'
 
 import typhoonDetectiveLine from '/@/data/typhoonDetectiveLine.json'
 
@@ -172,6 +172,10 @@ export default defineComponent({
       svgLine.value = svgLines(projection, { map, JSON: unref(lineJSON) })
       svgPoint.value = svgPoints({ map })
       svgLabel.value = svgLabels(projection, { map })
+      const urls = ['https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202305', 'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202306']
+      urls.forEach((url) => {
+        redrawTyphoon(url)
+      })
     }
 
     // 求出方位半径方向上弧形经纬度
@@ -196,6 +200,109 @@ export default defineComponent({
         points.push([x, y])
       }
       return points
+    }
+
+    function redrawTyphoon(url) {
+      const request = new XMLHttpRequest()
+      const _map = unref(map)
+      request.onreadystatechange = function () { // 状态发生变化时，函数被回调
+        if (request.readyState === 4) { // 成功完成
+          // 判断响应结果:
+          if (request.status === 200) {
+            const { name, enname, points } = JSON.parse(request.response)
+            const geoJSON = {
+              type: 'Feature',
+              geometry: {
+                type: 'LineString',
+                coordinates: undefined,
+              },
+              properties: {
+                name,
+                enname,
+                highway: 'typhoon',
+              },
+              wid: `typhoon-${enname}`,
+            }
+            let index = points.length - 1
+            let bindPopupCentext
+            geoJSON.geometry.coordinates = points.map((point) => {
+              let marker
+              bindPopupCentext = `<p style=""><b>${name}</b> ${point.time}</p>
+                <p style="color: ${typhoonLevel[point.strong]}">${point.power}级(${point.strong})</p>
+                <p>纬度: ${Number(point.lat)} 经度: ${Number(point.lng)}</p>`
+              if (index-- === 0) {
+                bindPopupCentext += `<p>未来趋势: <b>${point.jl}</b></p>`
+                const icon = L.divIcon({
+                  html: `<img src="${typhoonGif}">`,
+                  iconSize: [40, 40],
+                  className: 'typhoon-marker-gif',
+                })
+                marker = L.marker(L.latLng(Number(point.lat), Number(point.lng)), {
+                  icon,
+                }).bindTooltip(`<b style="color: ${typhoonLevel[point.strong]}">${name}</b> ${point.time}`, { permanent: true })
+                const startAngle = [0, 90, 180, 270]
+                const { radius7, radius10, radius12 } = point
+
+                if (radius7) {
+                  const radius7s = point.radius7.split('|')
+                  const r7Ne = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[0]), startAngle[0])
+                  const r7Nw = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[1]), startAngle[1])
+                  const r7Sw = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[2]), startAngle[2])
+                  const r7Se = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[3]), startAngle[3])
+                  const polygon7 = L.polygon([
+                    ...r7Ne, ...r7Nw, ...r7Sw, ...r7Se,
+                  ], { smoothFactor: 0.1, fillColor: 'rgb(0, 176, 15)', color: 'rgb(0, 176, 15)', weight: 1 }).addTo(_map)
+                  unref(typhoonCenters).push(polygon7)
+                }
+
+                if (radius10) {
+                  const radius10s = point.radius10.split('|')
+                  const r10Ne = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[0]), startAngle[0])
+                  const r10Nw = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[1]), startAngle[1])
+                  const r10Sw = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[2]), startAngle[2])
+                  const r10Se = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[3]), startAngle[3])
+                  const polygon7 = L.polygon([
+                    ...r10Ne, ...r10Nw, ...r10Sw, ...r10Se,
+                  ], { color: 'rgb(248, 213, 0)', weight: 1 }).addTo(_map)
+                  unref(typhoonCenters).push(polygon7)
+                }
+
+                if (radius12) {
+                  const radius12s = point.radius12.split('|')
+                  const r12Ne = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[0]), startAngle[0])
+                  const r12Nw = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[1]), startAngle[1])
+                  const r12Sw = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[2]), startAngle[2])
+                  const r12Se = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[3]), startAngle[3])
+                  const polygon7 = L.polygon([
+                    ...r12Ne, ...r12Nw, ...r12Sw, ...r12Se,
+                  ], { smoothFactor: 0.1, fillColor: 'rgb(255, 0, 0)', color: 'rgb(255, 0, 0)', weight: 1 }).addTo(_map)
+                  unref(typhoonCenters).push(polygon7)
+                }
+              }
+              else {
+                marker = L.circle(L.latLng(Number(point.lat), Number(point.lng)), {
+                  color: typhoonLevel[point.strong],
+                  weight: 6,
+                })
+              }
+              marker.bindPopup(bindPopupCentext)
+              unref(typhoonCenters).push(marker)
+
+              return [Number(point.lng), Number(point.lat)]
+            })
+            L.GeoJSON.geometryToLayer(geoJSON).addTo(_map)
+            unref(typhoonCenters).forEach((e) => {
+              e.addTo(_map)
+            })
+          }
+        }
+        else {
+          // HTTP请求还在继续...
+        }
+      }
+
+      request.open('GET', url)
+      request.send()
     }
 
     function redraw() {
@@ -246,108 +353,13 @@ export default defineComponent({
         ls = unref(lines)
       }
 
-      const typhoonGeoJSON = []
-
-      unref(typhoonCenters).forEach((center) => {
-        if (_map.hasLayer(center))
-          _map.removeLayer(center)
-      })
-
-      typhoon.forEach((e) => {
-        const { name, enname, points } = e
-        const t = {
-          type: 'Feature',
-          geometry: {
-            type: 'LineString',
-            coordinates: undefined,
-          },
-          properties: {
-            name,
-            enname,
-            highway: 'typhoon',
-          },
-          wid: `typhoon-${enname}`,
-        }
-        let index = points.length - 1
-        let bindPopupCentext
-        t.geometry.coordinates = points.map((point) => {
-          let marker
-          bindPopupCentext = `<p style=""><b>${name}</b> ${point.time}</p>
-                <p style="color: ${typhoonLevel[point.strong]}">${point.power}级(${point.strong})</p>
-                <p>纬度: ${Number(point.lat)} 经度: ${Number(point.lng)}</p>`
-          if (index-- === 0) {
-            bindPopupCentext += `<p>未来趋势: <b>${point.jl}</b></p>`
-            const icon = L.divIcon({
-              html: `<img src="${typhoonGif}">`,
-              iconSize: [40, 40],
-              className: 'typhoon-marker-gif',
-            })
-            marker = L.marker(L.latLng(Number(point.lat), Number(point.lng)), {
-              icon,
-            })
-            const startAngle = [0, 90, 180, 270]
-            const { radius7, radius10, radius12 } = point
-
-            if (radius7) {
-              const radius7s = point.radius7.split('|')
-              const r7Ne = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[0]), startAngle[0])
-              const r7Nw = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[1]), startAngle[1])
-              const r7Sw = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[2]), startAngle[2])
-              const r7Se = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[3]), startAngle[3])
-              const polygon7 = L.polygon([
-                ...r7Ne, ...r7Nw, ...r7Sw, ...r7Se,
-              ], { smoothFactor: 0.1, fillColor: 'rgb(0, 176, 15)', color: 'rgb(0, 176, 15)', weight: 1 }).addTo(_map)
-              unref(typhoonCenters).push(polygon7)
-            }
-
-            if (radius10) {
-              const radius10s = point.radius10.split('|')
-              const r10Ne = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[0]), startAngle[0])
-              const r10Nw = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[1]), startAngle[1])
-              const r10Sw = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[2]), startAngle[2])
-              const r10Se = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[3]), startAngle[3])
-              const polygon7 = L.polygon([
-                ...r10Ne, ...r10Nw, ...r10Sw, ...r10Se,
-              ], { color: 'rgb(248, 213, 0)', weight: 1 }).addTo(_map)
-              unref(typhoonCenters).push(polygon7)
-            }
-
-            if (radius12) {
-              const radius12s = point.radius12.split('|')
-              const r12Ne = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[0]), startAngle[0])
-              const r12Nw = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[1]), startAngle[1])
-              const r12Sw = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[2]), startAngle[2])
-              const r12Se = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[3]), startAngle[3])
-              const polygon7 = L.polygon([
-                ...r12Ne, ...r12Nw, ...r12Sw, ...r12Se,
-              ], { smoothFactor: 0.1, fillColor: 'rgb(255, 0, 0)', color: 'rgb(255, 0, 0)', weight: 1 }).addTo(_map)
-              unref(typhoonCenters).push(polygon7)
-            }
-          }
-          else {
-            marker = L.circle(L.latLng(Number(point.lat), Number(point.lng)), {
-              color: typhoonLevel[point.strong],
-              weight: 6,
-            })
-          }
-          marker.bindPopup(bindPopupCentext)
-          unref(typhoonCenters).push(marker)
-
-          return [Number(point.lng), Number(point.lat)]
-        })
-        unref(typhoonCenters).forEach((e) => {
-          e.addTo(_map)
-        })
-        typhoonGeoJSON.push(t)
-      })
-
       const bounds = getBounds()
 
       const _svgArea = unref(svgArea)
       _svgArea(_svg, as, bounds)
 
       const _svgLine = unref(svgLine)
-      _svgLine(_svg, [...ls, ...typhoonDetectiveLine, ...typhoonGeoJSON], bounds, clipExtent)
+      _svgLine(_svg, [...ls, ...typhoonDetectiveLine], bounds, clipExtent)
 
       const _svgPoint = unref(svgPoint)
       _svgPoint(_svg, pts)

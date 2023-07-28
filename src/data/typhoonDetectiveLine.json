@@ -31,7 +31,7 @@
       ]
     },
     "properties": {
-      "name": "24小数警戒线",
+      "name": "24小时警戒线",
       "color": "red"
     },
     "wid": "typhoon_detective_line_24"
@@ -60,7 +60,7 @@
       ]
     },
     "properties": {
-      "name": "48小数警戒线",
+      "name": "48小时警戒线",
       "color": "yellow"
     },
     "wid": "typhoon_detective_line_48"
