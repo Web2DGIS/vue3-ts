@@ -12,12 +12,15 @@ import { svgTagClasses } from './tag/tag_classes'
 import { miniTileLayer, tileLayers } from './tileLayers'
 
 import login from '/@/assets/images/logo.png'
+import typhoonGif from '/@/assets/gif/typhoon.gif'
 import { behaviorHash } from '/@/hooks/core/useHash'
 import { GeometryTypeEnum } from '/@/enums/geometryTypeEnum'
 import { svgAreas, svgDefs, svgLabels, svgLines, svgPoints } from './svg'
 import { themeControl } from './control'
 
-import { geojson } from '/@/data'
+import { geojson, typhoon, typhoonLevel } from '/@/data'
+
+import typhoonDetectiveLine from '/@/data/typhoonDetectiveLine.json'
 
 import { layerInfo } from './helpers'
 
@@ -43,6 +46,8 @@ export default defineComponent({
 
     const svg = ref<any | null>(null)
     const rect = ref<DOMRect | null>(null)
+
+    const typhoonCenters = ref<Array<any>>([])
 
     const tagClasses = svgTagClasses()
 
@@ -70,12 +75,12 @@ export default defineComponent({
         .node()
         .getBoundingClientRect()
       map.value = L.map(mapContainer.value, {
-        zoom: 5,
+        zoom: 4,
         minZoom: 2,
         maxZoom: 24,
         zoomSnap: 0.5,
         wheelPxPerZoomLevel: 500,
-        center: [30.66071, 104.06167],
+        center: [33.83, 120.15],
       })
       const _map: any = unref(map)
       const hash = behaviorHash({ map: _map })
@@ -169,6 +174,30 @@ export default defineComponent({
       svgLabel.value = svgLabels(projection, { map })
     }
 
+    // 求出方位半径方向上弧形经纬度
+    const getPoints = (center, cradius, startAngle) => {
+      const radius = cradius / 90
+      const pointNum = 90
+      const endAngle = startAngle + 90
+      const points = []
+      let sin
+      let cos
+      let x
+      let y
+      let angle
+
+      for (let i = 0; i <= pointNum; i++) {
+        angle = startAngle + (endAngle - startAngle) * i
+          / pointNum
+        sin = Math.sin(angle * Math.PI / 180)
+        cos = Math.cos(angle * Math.PI / 180)
+        x = center[0] + radius * sin
+        y = center[1] + radius * cos
+        points.push([x, y])
+      }
+      return points
+    }
+
     function redraw() {
       const _map = unref(map)
       const _svg = unref(svg)
@@ -190,22 +219,22 @@ export default defineComponent({
       if (_map.getZoom() >= 17) {
         const tree = new RBush()
         const rb: Array<any>
-           = unref(points).map((point) => {
-             const { geometry } = point
-             const { x, y } = map.value.latLngToLayerPoint(
-               L.latLng(
-                 geometry.coordinates[1],
-                 geometry.coordinates[0],
-               ),
-             )
-             return {
-               maxX: x,
-               maxY: y,
-               minX: x,
-               minY: y,
-               point,
-             }
-           })
+          = unref(points).map((point) => {
+            const { geometry } = point
+            const { x, y } = map.value.latLngToLayerPoint(
+              L.latLng(
+                geometry.coordinates[1],
+                geometry.coordinates[0],
+              ),
+            )
+            return {
+              maxX: x,
+              maxY: y,
+              minX: x,
+              minY: y,
+              point,
+            }
+          })
         tree.load(rb)
         pts = tree.search(bbox).map((d: any) => {
           return unref(d.point)
@@ -217,19 +246,114 @@ export default defineComponent({
         ls = unref(lines)
       }
 
+      const typhoonGeoJSON = []
+
+      unref(typhoonCenters).forEach((center) => {
+        if (_map.hasLayer(center))
+          _map.removeLayer(center)
+      })
+
+      typhoon.forEach((e) => {
+        const { name, enname, points } = e
+        const t = {
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: undefined,
+          },
+          properties: {
+            name,
+            enname,
+            highway: 'typhoon',
+          },
+          wid: `typhoon-${enname}`,
+        }
+        let index = points.length - 1
+
+        t.geometry.coordinates = points.map((point) => {
+          let marker
+          let bindPopupCentext = `<p style=""><b>${name}</b> ${point.time}</p>
+                <p style="color: ${typhoonLevel[point.strong]}">${point.power}级(${point.strong})</p>
+                <p>纬度: ${Number(point.lat)} 经度: ${Number(point.lng)}</p>`
+          if (index-- === 0) {
+            bindPopupCentext += ` <p>未来趋势: <b>${point.jl}</b></p>`
+            const icon = L.divIcon({
+              html: `<img src="${typhoonGif}">`,
+              iconSize: [40, 40],
+              className: 'typhoon-marker-gif',
+            })
+            marker = L.marker(L.latLng(Number(point.lat), Number(point.lng)), {
+              icon,
+            })
+              .bindTooltip(name, { permanent: true })
+            const startAngle = [0, 90, 180, 270]
+            const { radius7, radius10, radius12 } = point
+
+            if (radius7) {
+              const radius7s = point.radius7.split('|')
+              const r7Ne = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[0]), startAngle[0])
+              const r7Nw = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[1]), startAngle[1])
+              const r7Sw = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[2]), startAngle[2])
+              const r7Se = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[3]), startAngle[3])
+              const polygon7 = L.polygon([
+                ...r7Ne, ...r7Nw, ...r7Sw, ...r7Se,
+              ], { smoothFactor: 0.1, fillColor: 'rgb(0, 176, 15)', color: 'rgb(0, 176, 15)', weight: 1 }).addTo(_map)
+              unref(typhoonCenters).push(polygon7)
+            }
+
+            if (radius10) {
+              const radius10s = point.radius10.split('|')
+              const r10Ne = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[0]), startAngle[0])
+              const r10Nw = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[1]), startAngle[1])
+              const r10Sw = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[2]), startAngle[2])
+              const r10Se = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[3]), startAngle[3])
+              const polygon7 = L.polygon([
+                ...r10Ne, ...r10Nw, ...r10Sw, ...r10Se,
+              ], { color: 'rgb(248, 213, 0)', weight: 1 }).addTo(_map)
+              unref(typhoonCenters).push(polygon7)
+            }
+
+            if (radius12) {
+              const radius12s = point.radius12.split('|')
+              const r12Ne = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[0]), startAngle[0])
+              const r12Nw = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[1]), startAngle[1])
+              const r12Sw = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[2]), startAngle[2])
+              const r12Se = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[3]), startAngle[3])
+              const polygon7 = L.polygon([
+                ...r12Ne, ...r12Nw, ...r12Sw, ...r12Se,
+              ], { smoothFactor: 0.1, fillColor: 'rgb(255, 0, 0)', color: 'rgb(255, 0, 0)', weight: 1 }).addTo(_map)
+              unref(typhoonCenters).push(polygon7)
+            }
+          }
+          else {
+            marker = L.circle(L.latLng(Number(point.lat), Number(point.lng)), {
+              color: typhoonLevel[point.strong],
+              weight: 6,
+            })
+          }
+
+          marker
+            .bindPopup(bindPopupCentext)
+            .addTo(_map)
+          unref(typhoonCenters).push(marker)
+          return [Number(point.lng), Number(point.lat)]
+        })
+        typhoonGeoJSON.push(t)
+      })
+
       const bounds = getBounds()
 
       const _svgArea = unref(svgArea)
       _svgArea(_svg, as, bounds)
 
       const _svgLine = unref(svgLine)
-      _svgLine(_svg, ls, bounds, clipExtent)
+      _svgLine(_svg, [...ls, ...typhoonDetectiveLine, ...typhoonGeoJSON], bounds, clipExtent)
 
       const _svgPoint = unref(svgPoint)
       _svgPoint(_svg, pts)
 
       const _svgLabel = unref(svgLabel)
-      _svgLabel(_svg, [...ls, ...as, ...pts], clipExtent)
+      _svgLabel(_svg, [...typhoonDetectiveLine, ...as, ...pts], clipExtent)
     }
 
     function getBounds() {
@@ -285,7 +409,10 @@ export default defineComponent({
   background: var(--map-bg-color);
   inset: 0;
 
-  &, .legend, .leaflet-control-scale-line, .leaflet-control-container a {
+  &,
+  .legend,
+  .leaflet-control-scale-line,
+  .leaflet-control-container a {
     transition: all .6s;
   }
 
@@ -295,7 +422,7 @@ export default defineComponent({
     overflow-x: scroll;
     border-radius: 4px;
     background-color: var(--bg-color);
-    background-image: linear-gradient(155deg,var(--wh-color-primary),transparent 24%);
+    background-image: linear-gradient(155deg, var(--wh-color-primary), transparent 24%);
     box-shadow: 0 0 15px rgba(0, 0, 0, .2);
     color: var(--text-color);
     font-size: 10px;
@@ -325,7 +452,7 @@ export default defineComponent({
       border: 2px solid var(--border-color);
       border-radius: 2px;
       background-color: var(--bg-color);
-      background-image: linear-gradient(155deg,var(--wh-color-primary),transparent 24%);
+      background-image: linear-gradient(155deg, var(--wh-color-primary), transparent 24%);
       color: var(--text-color);
       font-size: 24px;
       line-height: 30px;
