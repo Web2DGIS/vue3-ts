@@ -10,7 +10,7 @@ export const geojson = [...cd.features]
 
 export const typhoon = [duSuri, canu]
 
-export const typhoonLevel = {
+export const typhoonLevel: any = {
   台风: '#FF9800',
   强台风: '#E91E63',
   超强台风: '#D50000',

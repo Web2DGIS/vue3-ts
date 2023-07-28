@@ -225,7 +225,7 @@ export default defineComponent({
             }
             let index = points.length - 1
             let bindPopupCentext
-            geoJSON.geometry.coordinates = points.map((point) => {
+            geoJSON.geometry.coordinates = points.map((point: any) => {
               let marker
               bindPopupCentext = `<p style=""><b>${name}</b> ${point.time}</p>
                 <p style="color: ${typhoonLevel[point.strong]}">${point.power}级(${point.strong})</p>
@@ -241,42 +241,27 @@ export default defineComponent({
                   icon,
                 }).bindTooltip(`<b style="color: ${typhoonLevel[point.strong]}">${name}</b> ${point.time}`, { permanent: true })
                 const startAngle = [0, 90, 180, 270]
-                const { radius7, radius10, radius12 } = point
 
-                if (radius7) {
-                  const radius7s = point.radius7.split('|')
-                  const r7Ne = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[0]), startAngle[0])
-                  const r7Nw = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[1]), startAngle[1])
-                  const r7Sw = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[2]), startAngle[2])
-                  const r7Se = getPoints([Number(point.lat), Number(point.lng)], Number(radius7s[3]), startAngle[3])
-                  const polygon7 = L.polygon([
-                    ...r7Ne, ...r7Nw, ...r7Sw, ...r7Se,
-                  ], { smoothFactor: 0.1, fillColor: 'rgb(0, 176, 15)', color: 'rgb(0, 176, 15)', weight: 1 }).addTo(_map)
-                  unref(typhoonCenters).push(polygon7)
+                const numColor: any = {
+                  radius7: 'rgb(0, 176, 15)',
+                  radius10: 'rgb(248, 213, 0)',
+                  radius12: 'rgb(248, 213, 0)',
                 }
 
-                if (radius10) {
-                  const radius10s = point.radius10.split('|')
-                  const r10Ne = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[0]), startAngle[0])
-                  const r10Nw = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[1]), startAngle[1])
-                  const r10Sw = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[2]), startAngle[2])
-                  const r10Se = getPoints([Number(point.lat), Number(point.lng)], Number(radius10s[3]), startAngle[3])
-                  const polygon7 = L.polygon([
-                    ...r10Ne, ...r10Nw, ...r10Sw, ...r10Se,
-                  ], { color: 'rgb(248, 213, 0)', weight: 1 }).addTo(_map)
-                  unref(typhoonCenters).push(polygon7)
-                }
-
-                if (radius12) {
-                  const radius12s = point.radius12.split('|')
-                  const r12Ne = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[0]), startAngle[0])
-                  const r12Nw = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[1]), startAngle[1])
-                  const r12Sw = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[2]), startAngle[2])
-                  const r12Se = getPoints([Number(point.lat), Number(point.lng)], Number(radius12s[3]), startAngle[3])
-                  const polygon7 = L.polygon([
-                    ...r12Ne, ...r12Nw, ...r12Sw, ...r12Se,
-                  ], { smoothFactor: 0.1, fillColor: 'rgb(255, 0, 0)', color: 'rgb(255, 0, 0)', weight: 1 }).addTo(_map)
-                  unref(typhoonCenters).push(polygon7)
+                for (const key of Object.keys(point)) {
+                  if (key.includes('radius') && point[key]) {
+                    const radius = point[key].split('|')
+                    const lat = Number(point.lat)
+                    const lng = Number(point.lng)
+                    const ne = getPoints([lat, lng], Number(radius[0]), startAngle[0])
+                    const nw = getPoints([lat, lng], Number(radius[1]), startAngle[1])
+                    const rw = getPoints([lat, lng], Number(radius[2]), startAngle[2])
+                    const re = getPoints([lat, lng], Number(radius[3]), startAngle[3])
+                    const polygon = L.polygon([
+                      ...ne, ...nw, ...rw, ...re,
+                    ], { smoothFactor: 0.1, fillColor: numColor[key], color: numColor[key], weight: 1 }).addTo(_map)
+                    unref(typhoonCenters).push(polygon)
+                  }
                 }
               }
               else {
