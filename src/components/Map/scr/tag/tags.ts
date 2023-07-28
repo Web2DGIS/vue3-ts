@@ -260,6 +260,7 @@ export const osmRoutableHighwayTagValues = {
   pedestrian: true,
   corridor: true,
   steps: true,
+  typhoon: true,
 }
 // "highway" tag values that generally do not allow motor vehicles
 export const osmPathHighwayTagValues: any = {

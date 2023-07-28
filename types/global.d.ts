@@ -1,3 +1,4 @@
+import { AnymatchFn } from 'vite';
 import type {
   ComponentRenderProxy,
   VNode,
@@ -88,4 +89,11 @@ declare module 'vue' {
   export type JSXComponent<Props = any> =
     | { new (): ComponentPublicInstance<Props> }
     | FunctionalComponent<Props>;
+}
+
+declare interface window {
+  top: {
+    location: any
+  },
+  MSStream: any
 }
