@@ -239,7 +239,7 @@ export default defineComponent({
                 })
                 marker = L.marker(L.latLng(Number(point.lat), Number(point.lng)), {
                   icon,
-                })
+                }).bindTooltip(`<b style="color: ${typhoonLevel[point.strong]}">${name}</b> ${point.time}`, { permanent: true })
                 const startAngle = [0, 90, 180, 270]
                 const { radius7, radius10, radius12 } = point
 
