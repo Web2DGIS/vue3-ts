@@ -16,6 +16,9 @@ import {
 } from '/@/geo/vector'
 import type { GeoJSON } from './types'
 import { GeometryTypeEnum } from '/@/enums/geometryTypeEnum'
+import { typhoonLevel } from '/@/data'
+
+import typhoonGif from '/@/assets/gif/typhoon.gif'
 
 export interface Segments {
   d: string
@@ -144,4 +147,116 @@ export function layerInfo(feature: GeoJSON) {
   enter
     .append('b')
     .text((d: string) => { return properties[d] })
+}
+
+export function getPoints(center: Array<number>, cradius: number, startAngle: number):
+Array<Array<number>> {
+  const radius = cradius / 90
+  const pointNum = 90
+  const endAngle = startAngle + 90
+  const points = []
+  let sin
+  let cos
+  let x
+  let y
+  let angle
+
+  for (let i = 0; i <= pointNum; i++) {
+    angle = startAngle + (endAngle - startAngle) * i
+      / pointNum
+    sin = Math.sin(angle * Math.PI / 180)
+    cos = Math.cos(angle * Math.PI / 180)
+    x = center[0] + radius * sin
+    y = center[1] + radius * cos
+    points.push([x, y])
+  }
+  return points
+}
+
+const typhoonCenters: Array<any> = []
+export function redrawTyphoon(url: string, _map: any) {
+  const request = new XMLHttpRequest()
+  request.onreadystatechange = function () { // 状态发生变化时，函数被回调
+    if (request.readyState === 4) { // 成功完成
+      // 判断响应结果:
+      if (request.status === 200) {
+        const { name, enname, points } = JSON.parse(request.response)
+        const geoJSON = {
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: undefined,
+          },
+          properties: {
+            name,
+            enname,
+            highway: 'typhoon',
+          },
+          wid: `typhoon-${enname}`,
+        }
+        let index = points.length - 1
+        let bindPopupCentext
+        geoJSON.geometry.coordinates = points.map((point: any) => {
+          let marker
+          bindPopupCentext = `<p style=""><b>${name}</b> ${point.time}</p>
+            <p style="color: ${typhoonLevel[point.strong]}">${point.power}级(${point.strong})</p>
+            <p>纬度: ${Number(point.lat)} 经度: ${Number(point.lng)}</p>`
+          if (index-- === 0) {
+            bindPopupCentext += `<p>未来趋势: <b>${point.jl}</b></p>`
+            const icon = L.divIcon({
+              html: `<img src="${typhoonGif}">`,
+              iconSize: [40, 40],
+              className: 'typhoon-marker-gif',
+            })
+            marker = L.marker(L.latLng(Number(point.lat), Number(point.lng)), {
+              icon,
+            }).bindTooltip(`<b style="color: ${typhoonLevel[point.strong]}">${name}</b> ${point.time}`, { permanent: true })
+            const startAngle = [0, 90, 180, 270]
+
+            const numColor: any = {
+              radius7: 'rgb(0, 176, 15)',
+              radius10: 'rgb(248, 213, 0)',
+              radius12: 'rgb(248, 213, 0)',
+            }
+
+            for (const key of Object.keys(point)) {
+              if (key.includes('radius') && point[key]) {
+                const radius = point[key].split('|')
+                const lat = Number(point.lat)
+                const lng = Number(point.lng)
+                const ne = getPoints([lat, lng], Number(radius[0]), startAngle[0])
+                const nw = getPoints([lat, lng], Number(radius[1]), startAngle[1])
+                const rw = getPoints([lat, lng], Number(radius[2]), startAngle[2])
+                const re = getPoints([lat, lng], Number(radius[3]), startAngle[3])
+                const polygon = L.polygon([
+                  ...ne, ...nw, ...rw, ...re,
+                ], { smoothFactor: 0.1, fillColor: numColor[key], color: numColor[key], weight: 1 }).addTo(_map)
+                typhoonCenters.push(polygon)
+              }
+            }
+          }
+          else {
+            marker = L.circle(L.latLng(Number(point.lat), Number(point.lng)), {
+              color: typhoonLevel[point.strong],
+              weight: 6,
+            })
+          }
+          marker.bindPopup(bindPopupCentext)
+          typhoonCenters.push(marker)
+
+          return [Number(point.lng), Number(point.lat)]
+        })
+        L.GeoJSON.geometryToLayer(geoJSON).addTo(_map)
+        typhoonCenters.forEach((e) => {
+          e.addTo(_map)
+        })
+      }
+    }
+    else {
+      // HTTP请求还在继续...
+    }
+  }
+
+  request.open('GET', url)
+  request.send()
 }
