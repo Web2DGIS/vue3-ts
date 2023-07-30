@@ -232,6 +232,11 @@ export function redrawTyphoon(url: string, map: any) {
               radius10: 'rgb(248, 213, 0)',
               radius12: 'rgb(255, 0, 0)',
             }
+            const radiusName: any = {
+              radius7: '七级',
+              radius10: '十级',
+              radius12: '十二级',
+            }
 
             for (const key of Object.keys(point)) {
               if (key.includes('radius') && point[key]) {
@@ -251,7 +256,13 @@ export function redrawTyphoon(url: string, map: any) {
                   color: numColor[key],
                   weight: 1,
                   className: 'typhoon-circle',
-                }).addTo(map)
+                }).bindPopup(
+                  `
+                  <p>${radiusName[key]}风圈</p>
+                  <p>西北: ${radius[1]}|东北: ${radius[0]}</p>
+                  <p>西南: ${radius[3]}|东南: ${radius[2]}</p>
+                  `,
+                ).addTo(map)
 
                 typhoonCenters.push(polygon)
                 drawForecast(point.forecast, map)
