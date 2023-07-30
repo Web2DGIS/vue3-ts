@@ -152,7 +152,7 @@ export function layerInfo(feature: GeoJSON) {
 
 export function getPoints(center: Array<number>, cradius: number, startAngle: number):
 Array<Array<number>> {
-  const radius = cradius / 90
+  const radius = cradius / 100
   const pointNum = 90
   const endAngle = startAngle + 90
   const points = []
@@ -230,7 +230,7 @@ export function redrawTyphoon(url: string, map: any) {
             const numColor: any = {
               radius7: 'rgb(0, 176, 15)',
               radius10: 'rgb(248, 213, 0)',
-              radius12: 'rgb(248, 213, 0)',
+              radius12: 'rgb(255, 0, 0)',
             }
 
             for (const key of Object.keys(point)) {
@@ -238,12 +238,12 @@ export function redrawTyphoon(url: string, map: any) {
                 const radius = point[key].split('|')
                 const lat = Number(point.lat)
                 const lng = Number(point.lng)
-                const ne = getPoints([lat, lng], Number(radius[0]), startAngle[0])
-                const nw = getPoints([lat, lng], Number(radius[1]), startAngle[1])
-                const rw = getPoints([lat, lng], Number(radius[2]), startAngle[2])
-                const re = getPoints([lat, lng], Number(radius[3]), startAngle[3])
+                const ne = getPoints([lat, lng], Number(radius[0]), startAngle[0]) // 东北
+                const nw = getPoints([lat, lng], Number(radius[2]), startAngle[1]) // 东南
+                const sw = getPoints([lat, lng], Number(radius[3]), startAngle[2]) // 西南
+                const se = getPoints([lat, lng], Number(radius[1]), startAngle[3]) // 西北
                 const polygon = L.polygon([
-                  ...ne, ...nw, ...rw, ...re,
+                  ...se, ...ne, ...nw, ...sw,
                 ],
                 {
                   smoothFactor: 0.1,
@@ -306,7 +306,7 @@ function drawForecast(forecast: Array<any>, map: any) {
       const bindPopupContent = `
       <p><b style="color:${nationalColor[tm]}">${tm}</b> ${point.time} 预报</p>
       <p>最大风速: ${point.speed}/秒</p>
-      <p>风   力: ${point.power}</p>
+      <p>风   力: ${point.power}级</p>
       `
       marker.bindPopup(bindPopupContent)
       layers.push(marker)
