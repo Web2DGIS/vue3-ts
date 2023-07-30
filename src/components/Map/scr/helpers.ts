@@ -14,6 +14,7 @@ import {
   geoVecAngle,
   geoVecLength,
 } from '/@/geo/vector'
+import { unref } from 'vue'
 import type { GeoJSON } from './types'
 import { GeometryTypeEnum } from '/@/enums/geometryTypeEnum'
 import { typhoonLevel } from '/@/data'
@@ -174,7 +175,7 @@ Array<Array<number>> {
 }
 
 const typhoonCenters: Array<any> = []
-export function redrawTyphoon(url: string, _map: any) {
+export function redrawTyphoon(url: string, map: any) {
   const request = new XMLHttpRequest()
   request.onreadystatechange = function () { // 状态发生变化时，函数被回调
     if (request.readyState === 4) { // 成功完成
@@ -195,14 +196,27 @@ export function redrawTyphoon(url: string, _map: any) {
           wid: `typhoon-${enname}`,
         }
         let index = points.length - 1
-        let bindPopupCentext
+        let bindPopupContent
         geoJSON.geometry.coordinates = points.map((point: any) => {
           let marker
-          bindPopupCentext = `<p style=""><b>${name}</b> ${point.time}</p>
-            <p style="color: ${typhoonLevel[point.strong]}">${point.power}级(${point.strong})</p>
+          bindPopupContent = `<p style=""><b>${name}</b> ${point.time}</p>
+            <p>风速风力: ${point.speed} 米/秒,<b style="color: ${typhoonLevel[point.strong]}">${point.power}级(${point.strong})</b></p>
+            <p>移速移向: ${point.movespeed} 公里/小时,${point.movedirection}</p>
+            <p>中心气压: ${point.pressure} 百帕</p>
             <p>纬度: ${Number(point.lat)} 经度: ${Number(point.lng)}</p>`
+          const radius7 = point.radius7 ? point.radius7.split('|') : ''
+          const radius10 = point.radius10 ? point.radius10.split('|') : ''
+          const radius12 = point.radius12 ? point.radius12.split('|') : ''
+
+          bindPopupContent += Array.isArray(radius7) ? `<p>七级半径: ${Math.min(...radius7)}~${Math.max(...radius7)}</p>` : ''
+          bindPopupContent += Array.isArray(radius10) ? `<p>十级半径: ${Math.min(...radius10)}~${Math.max(...radius10)}</p>` : ''
+          bindPopupContent += Array.isArray(radius12) ? `<p>十二级半径: ${Math.min(...radius12)}~${Math.max(...radius12)}</p>` : ''
           if (index-- === 0) {
-            bindPopupCentext += `<p>未来趋势: <b>${point.jl}</b></p>`
+            console.log(point)
+
+            bindPopupContent += point.ckposition ? `<p>参考位置: <b>${point.ckposition}</b></p>` : ''
+            bindPopupContent += point.jl ? `<p>未来趋势: <b>${point.jl}</b></p>` : ''
+
             const icon = L.divIcon({
               html: `<img src="${typhoonGif}">`,
               iconSize: [40, 40],
@@ -230,25 +244,31 @@ export function redrawTyphoon(url: string, _map: any) {
                 const re = getPoints([lat, lng], Number(radius[3]), startAngle[3])
                 const polygon = L.polygon([
                   ...ne, ...nw, ...rw, ...re,
-                ], { smoothFactor: 0.1, fillColor: numColor[key], color: numColor[key], weight: 1 }).addTo(_map)
+                ],
+                {
+                  smoothFactor: 0.1,
+                  fillColor: numColor[key],
+                  color: numColor[key],
+                  weight: 1,
+                  className: 'typhoon-circle',
+                }).addTo(map)
+
                 typhoonCenters.push(polygon)
+                drawForecast(point.forecast, map)
               }
             }
           }
           else {
-            marker = L.circle(L.latLng(Number(point.lat), Number(point.lng)), {
-              color: typhoonLevel[point.strong],
-              weight: 6,
-            })
+            marker = drawTyphoonMarker(point, 6)
           }
-          marker.bindPopup(bindPopupCentext)
+          marker.bindPopup(bindPopupContent)
           typhoonCenters.push(marker)
 
           return [Number(point.lng), Number(point.lat)]
         })
-        L.GeoJSON.geometryToLayer(geoJSON).addTo(_map)
+        L.GeoJSON.geometryToLayer(geoJSON).addTo(map)
         typhoonCenters.forEach((e) => {
-          e.addTo(_map)
+          e.addTo(map)
         })
       }
     }
@@ -259,4 +279,42 @@ export function redrawTyphoon(url: string, _map: any) {
 
   request.open('GET', url)
   request.send()
+}
+
+function drawTyphoonMarker(point: any, weight: number): any {
+  return L.circle(L.latLng(Number(point.lat), Number(point.lng)), {
+    color: typhoonLevel[point.strong],
+    weight,
+  })
+}
+
+const nationalColor: any = {
+  中国: '#F44336',
+  中国香港: '#9C27B0',
+  中国台湾: '#2196F3',
+  日本: '#009688',
+  美国: '#FF9800',
+}
+
+function drawForecast(forecast: Array<any>, map: any) {
+  if (!forecast.length)
+    return
+  const layers: Array<any> = []
+  forecast.forEach(({ tm, forecastpoints }) => {
+    const latlngs = forecastpoints.map((point: any) => {
+      const marker = drawTyphoonMarker(point, 6)
+      const bindPopupContent = `
+      <p><b style="color:${nationalColor[tm]}">${tm}</b> ${point.time} 预报</p>
+      <p>最大风速: ${point.speed}/秒</p>
+      <p>风   力: ${point.power}</p>
+      `
+      marker.bindPopup(bindPopupContent)
+      layers.push(marker)
+      return [Number(point.lat), Number(point.lng)]
+    })
+    L.polyline(latlngs, { weight: 0.8, dashArray: [10, 6], color: nationalColor[tm] }).addTo(map)
+  })
+  layers.forEach((layer) => {
+    layer.addTo(unref(map))
+  })
 }

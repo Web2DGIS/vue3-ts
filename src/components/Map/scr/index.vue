@@ -1,5 +1,5 @@
 <script lang="tsx">
-import { defineComponent, onMounted, ref, unref } from 'vue'
+import { defineComponent, onMounted, reactive, ref, unref } from 'vue'
 
 import * as d3 from 'd3'
 import { geoTransform as d3_geoTransform } from 'd3-geo'
@@ -26,7 +26,7 @@ import { layerInfo, redrawTyphoon } from './helpers'
 export default defineComponent({
   name: 'LeafletMap',
   setup() {
-    const map = ref<any>(null)
+    let map = reactive<any>(null)
     const mapContainer = ref(null)
 
     const areas = ref<Array<any>>([])
@@ -71,7 +71,7 @@ export default defineComponent({
       rect.value = d3.select(mapContainer.value)
         .node()
         .getBoundingClientRect()
-      map.value = L.map(mapContainer.value, {
+      map = L.map(mapContainer.value, {
         zoom: 4,
         minZoom: 2,
         maxZoom: 24,
@@ -111,7 +111,7 @@ export default defineComponent({
       })
       L.control.scale().addTo(map)
       new L.Control.MiniMap(
-        L.tileLayer(miniTileLayer.url),
+        L.tileLayer(miniTileLayer.url, miniTileLayer.options),
         { toggleDisplay: true },
       ).addTo(map)
 
@@ -169,8 +169,7 @@ export default defineComponent({
       svgLine.value = svgLines(projection, { map, JSON: unref(lineJSON) })
       svgPoint.value = svgPoints({ map })
       svgLabel.value = svgLabels(projection, { map })
-      const urls = ['https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202305',
-        'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202306']
+      const urls = ['https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202306']
       urls.forEach((url) => {
         redrawTyphoon(url, map)
       })
@@ -199,7 +198,7 @@ export default defineComponent({
         const rb: Array<any>
           = unref(points).map((point) => {
             const { geometry } = point
-            const { x, y } = map.value.latLngToLayerPoint(
+            const { x, y } = map.latLngToLayerPoint(
               L.latLng(
                 geometry.coordinates[1],
                 geometry.coordinates[0],
