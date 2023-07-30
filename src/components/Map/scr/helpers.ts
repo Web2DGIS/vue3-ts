@@ -243,10 +243,10 @@ export function redrawTyphoon(url: string, map: any) {
                 const radius = point[key].split('|')
                 const lat = Number(point.lat)
                 const lng = Number(point.lng)
+                const se = getPoints([lat, lng], Number(radius[1]), startAngle[3]) // 东南
                 const ne = getPoints([lat, lng], Number(radius[0]), startAngle[0]) // 东北
-                const nw = getPoints([lat, lng], Number(radius[2]), startAngle[1]) // 东南
+                const nw = getPoints([lat, lng], Number(radius[2]), startAngle[1]) // 西北
                 const sw = getPoints([lat, lng], Number(radius[3]), startAngle[2]) // 西南
-                const se = getPoints([lat, lng], Number(radius[1]), startAngle[3]) // 西北
                 const polygon = L.polygon([
                   ...se, ...ne, ...nw, ...sw,
                 ],
@@ -259,8 +259,8 @@ export function redrawTyphoon(url: string, map: any) {
                 }).bindPopup(
                   `
                   <p>${radiusName[key]}风圈</p>
-                  <p>西北: ${radius[1]}|东北: ${radius[0]}</p>
-                  <p>西南: ${radius[3]}|东南: ${radius[2]}</p>
+                  <p>西北: ${radius[2]}|东北: ${radius[0]}</p>
+                  <p>西南: ${radius[3]}|东南: ${radius[1]}</p>
                   `,
                 ).addTo(map)
 
