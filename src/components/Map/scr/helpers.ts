@@ -14,8 +14,12 @@ import {
   geoVecAngle,
   geoVecLength,
 } from '/@/geo/vector'
+import { unref } from 'vue'
 import type { GeoJSON } from './types'
 import { GeometryTypeEnum } from '/@/enums/geometryTypeEnum'
+import { typhoonLevel } from '/@/data'
+
+import typhoonGif from '/@/assets/gif/typhoon.gif'
 
 export interface Segments {
   d: string
@@ -144,4 +148,184 @@ export function layerInfo(feature: GeoJSON) {
   enter
     .append('b')
     .text((d: string) => { return properties[d] })
+}
+
+export function getPoints(center: Array<number>, cradius: number, startAngle: number):
+Array<Array<number>> {
+  const radius = cradius / 100
+  const pointNum = 90
+  const endAngle = startAngle + 90
+  const points = []
+  let sin
+  let cos
+  let x
+  let y
+  let angle
+
+  for (let i = 0; i <= pointNum; i++) {
+    angle = startAngle + (endAngle - startAngle) * i
+      / pointNum
+    sin = Math.sin(angle * Math.PI / 180)
+    cos = Math.cos(angle * Math.PI / 180)
+    x = center[0] + radius * sin
+    y = center[1] + radius * cos
+    points.push([x, y])
+  }
+  return points
+}
+
+const typhoonCenters: Array<any> = []
+export function redrawTyphoon(url: string, map: any) {
+  const request = new XMLHttpRequest()
+  request.onreadystatechange = function () { // 状态发生变化时，函数被回调
+    if (request.readyState === 4) { // 成功完成
+      // 判断响应结果:
+      if (request.status === 200) {
+        const { name, enname, points } = JSON.parse(request.response)
+        const geoJSON = {
+          type: 'Feature',
+          geometry: {
+            type: 'LineString',
+            coordinates: undefined,
+          },
+          properties: {
+            name,
+            enname,
+            highway: 'typhoon',
+          },
+          wid: `typhoon-${enname}`,
+        }
+        let index = points.length - 1
+        let bindPopupContent
+        geoJSON.geometry.coordinates = points.map((point: any) => {
+          let marker
+          bindPopupContent = `<p style=""><b>${name}</b> ${point.time}</p>
+            <p>风速风力: ${point.speed} 米/秒,<b style="color: ${typhoonLevel[point.strong]}">${point.power}级(${point.strong})</b></p>
+            <p>移速移向: ${point.movespeed} 公里/小时,${point.movedirection}</p>
+            <p>中心气压: ${point.pressure} 百帕</p>
+            <p>纬度: ${Number(point.lat)} 经度: ${Number(point.lng)}</p>`
+          const radius7 = point.radius7 ? point.radius7.split('|') : ''
+          const radius10 = point.radius10 ? point.radius10.split('|') : ''
+          const radius12 = point.radius12 ? point.radius12.split('|') : ''
+
+          bindPopupContent += Array.isArray(radius7) ? `<p>七级半径: ${Math.min(...radius7)}~${Math.max(...radius7)}</p>` : ''
+          bindPopupContent += Array.isArray(radius10) ? `<p>十级半径: ${Math.min(...radius10)}~${Math.max(...radius10)}</p>` : ''
+          bindPopupContent += Array.isArray(radius12) ? `<p>十二级半径: ${Math.min(...radius12)}~${Math.max(...radius12)}</p>` : ''
+          if (index-- === 0) {
+            console.log(point)
+
+            bindPopupContent += point.ckposition ? `<p>参考位置: <b>${point.ckposition}</b></p>` : ''
+            bindPopupContent += point.jl ? `<p>未来趋势: <b>${point.jl}</b></p>` : ''
+
+            const icon = L.divIcon({
+              html: `<img src="${typhoonGif}">`,
+              iconSize: [40, 40],
+              className: 'typhoon-marker-gif',
+            })
+            marker = L.marker(L.latLng(Number(point.lat), Number(point.lng)), {
+              icon,
+            }).bindTooltip(`<b style="color: ${typhoonLevel[point.strong]}">${name}</b> ${point.time}`, { permanent: true })
+            const startAngle = [0, 90, 180, 270]
+
+            const numColor: any = {
+              radius7: 'rgb(0, 176, 15)',
+              radius10: 'rgb(248, 213, 0)',
+              radius12: 'rgb(255, 0, 0)',
+            }
+            const radiusName: any = {
+              radius7: '七级',
+              radius10: '十级',
+              radius12: '十二级',
+            }
+
+            for (const key of Object.keys(point)) {
+              if (key.includes('radius') && point[key]) {
+                const radius = point[key].split('|')
+                const lat = Number(point.lat)
+                const lng = Number(point.lng)
+                const ne = getPoints([lat, lng], Number(radius[0]), startAngle[0]) // 东北
+                const nw = getPoints([lat, lng], Number(radius[2]), startAngle[1]) // 东南
+                const sw = getPoints([lat, lng], Number(radius[3]), startAngle[2]) // 西南
+                const se = getPoints([lat, lng], Number(radius[1]), startAngle[3]) // 西北
+                const polygon = L.polygon([
+                  ...se, ...ne, ...nw, ...sw,
+                ],
+                {
+                  smoothFactor: 0.1,
+                  fillColor: numColor[key],
+                  color: numColor[key],
+                  weight: 1,
+                  className: 'typhoon-circle',
+                }).bindPopup(
+                  `
+                  <p>${radiusName[key]}风圈</p>
+                  <p>西北: ${radius[1]}|东北: ${radius[0]}</p>
+                  <p>西南: ${radius[3]}|东南: ${radius[2]}</p>
+                  `,
+                ).addTo(map)
+
+                typhoonCenters.push(polygon)
+                drawForecast(point.forecast, map)
+              }
+            }
+          }
+          else {
+            marker = drawTyphoonMarker(point, 6)
+          }
+          marker.bindPopup(bindPopupContent)
+          typhoonCenters.push(marker)
+
+          return [Number(point.lng), Number(point.lat)]
+        })
+        L.GeoJSON.geometryToLayer(geoJSON).addTo(map)
+        typhoonCenters.forEach((e) => {
+          e.addTo(map)
+        })
+      }
+    }
+    else {
+      // HTTP请求还在继续...
+    }
+  }
+
+  request.open('GET', url)
+  request.send()
+}
+
+function drawTyphoonMarker(point: any, weight: number): any {
+  return L.circle(L.latLng(Number(point.lat), Number(point.lng)), {
+    color: typhoonLevel[point.strong],
+    weight,
+  })
+}
+
+const nationalColor: any = {
+  中国: '#F44336',
+  中国香港: '#9C27B0',
+  中国台湾: '#2196F3',
+  日本: '#009688',
+  美国: '#FF9800',
+}
+
+function drawForecast(forecast: Array<any>, map: any) {
+  if (!forecast.length)
+    return
+  const layers: Array<any> = []
+  forecast.forEach(({ tm, forecastpoints }) => {
+    const latlngs = forecastpoints.map((point: any) => {
+      const marker = drawTyphoonMarker(point, 6)
+      const bindPopupContent = `
+      <p><b style="color:${nationalColor[tm]}">${tm}</b> ${point.time} 预报</p>
+      <p>最大风速: ${point.speed}/秒</p>
+      <p>风   力: ${point.power}级</p>
+      `
+      marker.bindPopup(bindPopupContent)
+      layers.push(marker)
+      return [Number(point.lat), Number(point.lng)]
+    })
+    L.polyline(latlngs, { weight: 0.8, dashArray: [10, 6], color: nationalColor[tm] }).addTo(map)
+  })
+  layers.forEach((layer) => {
+    layer.addTo(unref(map))
+  })
 }
