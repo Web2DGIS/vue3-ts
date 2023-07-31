@@ -205,7 +205,7 @@ export function redrawTyphoon(url: string, map: any) {
     if (request.readyState === 4) { // 成功完成
       // 判断响应结果:
       if (request.status === 200) {
-        const { name, enname, points } = JSON.parse(request.response)
+        const { name, enname, points, tfid } = JSON.parse(request.response)
         const geoJSON = {
           type: 'Feature',
           geometry: {
@@ -286,6 +286,8 @@ export function redrawTyphoon(url: string, map: any) {
           }
           else {
             marker = drawTyphoonMarker(point, 6)
+            if (index + 1 === points.length - 1)
+              marker.bindTooltip(`${tfid}${name}`, { permanent: true })
           }
           marker.bindPopup(bindPopupContent)
           typhoonLayers.addLayer(marker)
@@ -309,10 +311,11 @@ function drawTyphoonMarker(point: any, weight: number): any {
   return L.circle(L.latLng(Number(point.lat), Number(point.lng)), {
     color: typhoonLevel[point.strong],
     weight,
-  }).on('mouseover', ({ sourceTarget }) => {
-    const newWeight = weight + 4
-    sourceTarget.setStyle({ weight: newWeight })
   })
+    .on('mouseover', ({ sourceTarget }) => {
+      const newWeight = weight + 6
+      sourceTarget.setStyle({ weight: newWeight })
+    })
     .on('mouseout', ({ sourceTarget }) => {
       sourceTarget.setStyle({ weight })
     })
