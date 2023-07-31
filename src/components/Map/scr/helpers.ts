@@ -223,7 +223,7 @@ export function redrawTyphoon(url: string, map: any) {
         let bindPopupContent
         geoJSON.geometry.coordinates = points.map((point: any) => {
           let marker
-          bindPopupContent = `<p style=""><b>${name}</b> ${point.time}</p>
+          bindPopupContent = `<p style=""><b>${name}</b> ${getDate(point.time)}</p>
             <p>风速风力: ${point.speed} 米/秒,<b style="color: ${typhoonLevel[point.strong]}">${point.power}级(${point.strong})</b></p>
             <p>移速移向: ${point.movespeed} 公里/小时,${point.movedirection}</p>
             <p>中心气压: ${point.pressure} 百帕</p>
@@ -244,12 +244,11 @@ export function redrawTyphoon(url: string, map: any) {
               iconSize: [40, 40],
               className: 'typhoon-marker-gif',
             })
-            const time = new Date(point.time)
 
             marker = L.marker(L.latLng(Number(point.lat), Number(point.lng)), {
               icon,
             }).bindTooltip(`
-            <b style="color: ${typhoonLevel[point.strong]}">${name}</b> (${time.getMonth() + 1}月${time.getDate()}日${time.getHours()}时)`,
+            <b style="color: ${typhoonLevel[point.strong]}">${name}</b> (${getDate(point.time)})`,
             { permanent: true })
             const startAngle = [0, 90, 180, 270]
 
@@ -275,8 +274,8 @@ export function redrawTyphoon(url: string, map: any) {
                 }).bindPopup(
                   `
                   <p>${radiusName[key]}风圈</p>
-                  <p>西北: ${radius[2]}|东北: ${radius[0]}</p>
-                  <p>西南: ${radius[3]}|东南: ${radius[1]}</p>
+                  <p>西北:${radius[2]} | 东北:${radius[0]}</p>
+                  <p>西南:${radius[3]} | 东南:${radius[1]}</p>
                   `,
                 ).addTo(map)
 
@@ -313,6 +312,11 @@ function drawTyphoonMarker(point: any, weight: number): any {
   })
 }
 
+function getDate(time: string): string {
+  const date = new Date(time)
+  return `${date.getMonth() + 1}月${date.getDate()}日${date.getHours()}时`
+}
+
 function drawForecast(forecast: Array<any>, map: any) {
   if (!forecast.length)
     return
@@ -320,9 +324,10 @@ function drawForecast(forecast: Array<any>, map: any) {
     const latlngs = forecastpoints.map((point: any) => {
       const marker = drawTyphoonMarker(point, 6)
       const bindPopupContent = `
-      <p><b style="color:${nationalColor[tm]}">${tm}</b> ${point.time} 预报</p>
+      <p><b style="color:${nationalColor[tm]}">${tm}</b> 
+      ${getDate(point.time)} 预报</p>
       <p>最大风速: ${point.speed}/秒</p>
-      <p>风   力: ${point.power}级</p>
+      <p>风&nbsp;&nbsp;&nbsp;力: ${point.power}级</p>
       `
       marker.bindPopup(bindPopupContent)
       typhoonLayers.addLayer(marker)
