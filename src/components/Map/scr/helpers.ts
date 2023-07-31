@@ -309,7 +309,13 @@ function drawTyphoonMarker(point: any, weight: number): any {
   return L.circle(L.latLng(Number(point.lat), Number(point.lng)), {
     color: typhoonLevel[point.strong],
     weight,
+  }).on('mouseover', ({ sourceTarget }) => {
+    const newWeight = weight + 4
+    sourceTarget.setStyle({ weight: newWeight })
   })
+    .on('mouseout', ({ sourceTarget }) => {
+      sourceTarget.setStyle({ weight })
+    })
 }
 
 function getDate(time: string): string {
