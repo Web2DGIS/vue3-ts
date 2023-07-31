@@ -92,7 +92,7 @@ export default defineComponent({
       })
     })
 
-    function projectPoint(x: any, y: any) {
+    function projectPoint(this: any, x: any, y: any) {
       const point = unref(map).latLngToLayerPoint(L.latLng(y, x))
       this.stream.point(point.x, point.y)
     }
@@ -180,9 +180,9 @@ export default defineComponent({
       const _svg = unref(svg)
       const lineJson = unref(lineJSON)
       lineJson.clearLayers()
-      let as = []
-      let ls = []
-      let pts = []
+      let as: any = []
+      let ls: any = []
+      let pts: any = []
       const { _northEast, _southWest } = _map.getBounds()
       const _southWestXY = _map.latLngToLayerPoint(_southWest)
       const _northEastXY = _map.latLngToLayerPoint(_northEast)
@@ -235,7 +235,7 @@ export default defineComponent({
       _svgPoint(_svg, pts)
 
       const _svgLabel = unref(svgLabel)
-      _svgLabel(_svg, [...typhoonDetectiveLine, ...as, ...pts], clipExtent)
+      _svgLabel(_svg, [...ls, ...typhoonDetectiveLine, ...as, ...pts], clipExtent)
     }
 
     function getBounds() {

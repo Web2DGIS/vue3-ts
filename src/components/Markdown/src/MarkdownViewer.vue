@@ -1,6 +1,6 @@
 <script lang="ts" setup>
 import type { Ref } from 'vue'
-import { defineProps, onBeforeUnmount, onDeactivated, ref, unref, watch } from 'vue'
+import { onBeforeUnmount, onDeactivated, ref, unref, watch } from 'vue'
 import VditorPreview from 'vditor/dist/method.min'
 import { onMountedOrActivated } from '../../../../packages/hooks/src/onMountedOrActivated'
 
@@ -9,7 +9,7 @@ const props = defineProps({
   class: { type: String },
 })
 const viewerRef = ref(null)
-const vditorPreviewRef = ref(null) as Ref<VditorPreview | null>
+const vditorPreviewRef = ref(null) as Ref<null | VditorPreview>
 
 function init() {
   const viewerEl = unref(viewerRef)

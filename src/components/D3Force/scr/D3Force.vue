@@ -17,7 +17,7 @@ export default defineComponent({
       const nodes = data.nodes.map(d => Object.create(d))
 
       const simulation = d3.forceSimulation(nodes)
-        .force('link', d3.forceLink(links).id(d => d.id))
+        .force('link', d3.forceLink(links).id((d: any) => d.id))
         .force('charge', d3.forceManyBody().strength(-1600))
         .force('x', d3.forceX())
         .force('y', d3.forceY())
@@ -54,7 +54,7 @@ export default defineComponent({
       svg.append('defs').selectAll('marker')
         .data(types)
         .join('marker')
-        .attr('id', d => `arrow-${d}`)
+        .attr('id', (d: string) => `arrow-${d}`)
         .attr('viewBox', '0 -5 10 10')
         .attr('refX', 15)
         .attr('refY', -0.5)
@@ -71,35 +71,29 @@ export default defineComponent({
         .selectAll('path')
         .data(links)
         .join('path')
-        .attr('stroke', d => color(d.type))
-        .attr('marker-end', d => `url(#arrow-${d.type})`)
+        .attr('stroke', (d: any) => color(d.type))
+        .attr('marker-end', (d: any) => `url(#arrow-${d.type})`)
 
-      function mousemoved(event) {
-        const [x, y] = d3.pointer(event)
-        mouse = { x, y }
+      function mousemoved() {
         simulation.alpha(0.6).restart()
       }
 
-      function mouseleft() {
-        mouse = null
-      }
-
       // 拖动
-      const drag = (simulation) => {
-        function dragstarted(event, d) {
+      const drag = (simulation: any) => {
+        function dragstarted(event: any, d: any) {
           if (!event.active)
             simulation.alphaTarget(0.6).restart()
           d.fx = d.x
           d.fy = d.y
         }
 
-        function dragged(event, d) {
-          mousemoved(event)
+        function dragged(event: any, d: any) {
+          mousemoved()
           d.fx = event.x
           d.fy = event.y
         }
 
-        function dragended(event, d) {
+        function dragended(event: any, d: any) {
           if (!event.active)
             simulation.alphaTarget(0)
           d.fx = null
@@ -129,13 +123,13 @@ export default defineComponent({
       node.append('text')
         .attr('x', 8)
         .attr('y', '0.61em')
-        .text(d => d.id)
+        .text((d: any) => d.id)
         .clone(true).lower()
         .attr('fill', 'none')
         .attr('stroke', 'white')
         .attr('stroke-width', 3)
 
-      function linkArc(d) {
+      function linkArc(d: any) {
         const r = Math.hypot(d.target.x - d.source.x, d.target.y - d.source.y)
         return `
           M${d.source.x},${d.source.y}
@@ -145,7 +139,7 @@ export default defineComponent({
 
       simulation.on('tick', () => {
         link.attr('d', linkArc)
-        node.attr('transform', d => `translate(${d.x},${d.y})`)
+        node.attr('transform', (d: any) => `translate(${d.x},${d.y})`)
       })
     }
 
@@ -166,7 +160,7 @@ export default defineComponent({
 <template>
   <div ref="svgBox" class="svg-box">
     <div ref="typesBox" class="types">
-      <span v-for="type in types" :class="type">{{ type }}</span>
+      <span v-for="(type, index) in types" :key="index" :class="type">{{ type }}</span>
     </div>
     <svg ref="svgChart" />
   </div>

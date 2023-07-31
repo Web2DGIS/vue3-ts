@@ -11,6 +11,9 @@ declare module L {
   function circle(latlng: any, options?: any)
   function polygon(latlngs: any, options?: any)
   function polyline(latlngs: any, options?: any)
+  function featureGroup(layers?: Array<any>)
+  const PolyUtil: any
+  const LineUtil: any
 }
 declare module 'd3*'
 declare module '@turf*'

@@ -13,6 +13,6 @@ export const basicProps = {
     default: () => [],
   },
   beforeClickFn: {
-    type: Function as PropType<(key: string) => Promise<boolean>>,
+    type: Function as PropType<(key?: string) => Promise<boolean>>,
   },
 }

@@ -26,8 +26,8 @@ export interface Properties {
 
 export interface Content {
   map: {
-    getZoom: () => {}
-    latLngToLayerPoint: (latLng: any) => {}
+    getZoom: any
+    latLngToLayerPoint: any
   }
   JSON?: any
 }
