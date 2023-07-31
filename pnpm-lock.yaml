@@ -14,6 +14,9 @@ dependencies:
   '@turf/area':
     specifier: ^6.5.0
     version: 6.5.0
+  '@turf/helpers':
+    specifier: ^6.5.0
+    version: 6.5.0
   '@turf/length':
     specifier: ^6.5.0
     version: 6.5.0
