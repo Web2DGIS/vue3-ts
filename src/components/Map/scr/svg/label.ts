@@ -17,7 +17,7 @@ export function svgLabels(projection: any, context: any) {
   const _rskipped = new RBush()
 
   // Listed from highest to lowest priority
-  const labelStack = [
+  const labelStack: Array<Array<string | number>> = [
     [GeometryTypeEnum.LINE_STRING, 'aeroway', '*', 12],
     [GeometryTypeEnum.LINE_STRING, 'highway', 'motorway', 12],
     [GeometryTypeEnum.LINE_STRING, 'highway', 'trunk', 12],
@@ -55,11 +55,13 @@ export function svgLabels(projection: any, context: any) {
     [GeometryTypeEnum.POINT, 'name', '*', 10],
   ]
 
-  function get(array: Array<any>, prop: string) {
-    return function (_d: any, i: number) { return array[i][prop] }
+  function get(array: any, prop: string) {
+    return function (_d: any, i: number) {
+      return array[i][prop]
+    }
   }
 
-  function textWidth(text: string, size: number, elem?: SVGTextContentElement): number {
+  function textWidth(text: string, size: number, elem?: SVGTextContentElement | any): number {
     let c = _textWidthCache[size]
     if (!c)
       c = _textWidthCache[size] = {}
@@ -139,21 +141,24 @@ export function svgLabels(projection: any, context: any) {
       .style('text-anchor', get(labels, 'textAnchor'))
       .text((d: any) => { return utilDisplayName(d.properties) })
       .each((d: any, i: number) => {
-        textWidth(utilDisplayName(d.properties), labels[i].height, this)
+        textWidth(utilDisplayName(d.properties), labels[i].height)
       })
   }
 
-  function drawAreaLabels(selection: any, entities: Array<any>, classes: string, labels: Array<any>) {
+  function drawAreaLabels(selection: any, entities: Array<any>,
+    classes: string, labels: any) {
     entities = entities.filter(hasText)
     labels = labels.filter(hasText)
     drawPointLabels(selection, entities, classes, labels)
 
     function hasText(_d: any, i: number) {
-      return labels[i].hasOwnProperty('x') && labels[i].hasOwnProperty('y')
+      return Object.prototype.hasOwnProperty.call(labels[i], 'x')
+      && Object.prototype.hasOwnProperty.call(labels[i], 'y')
     }
   }
 
-  function drawLabels(selection: any, entities: Array<any>, clipExtent: Array<Array<number>>) {
+  function drawLabels(selection: any, entities: Array<any>,
+    clipExtent: Array<Array<number>>) {
     const labelable: Array<any> = []
     const renderNodeAs: any = {}
     let i, k, entity, geometry: any
@@ -219,7 +224,7 @@ export function svgLabels(projection: any, context: any) {
     }
 
     for (k = 0; k < labelable.length; k++) {
-      const fontSize: number = labelStack[k][3]
+      const fontSize: number = Number(labelStack[k][3])
 
       for (i = 0; i < labelable[k].length; i++) {
         entity = labelable[k][i]
@@ -227,8 +232,8 @@ export function svgLabels(projection: any, context: any) {
 
         const getName = (geometry === GeometryTypeEnum.LINE_STRING) ? utilDisplayNameForPath : utilDisplayName
         const name = getName(entity.properties)
-        const width = name && textWidth(name, fontSize)
-        let p = null
+        const width = name && textWidth(name, fontSize) ? Number(textWidth(name, fontSize)) : 0
+        let p: any = null
         if (geometry === GeometryTypeEnum.POINT) {
           const renderAs = renderNodeAs[entity.wid]
           p = getPointLabel(entity, width, fontSize, renderAs)
@@ -296,29 +301,28 @@ export function svgLabels(projection: any, context: any) {
       const areaWidth = northEastXY.x - southWestXY.x
       if (Number.isNaN(centroid[0]) || areaWidth < 20)
         return
-      const iconSize = 17
       const padding = 2
       const p: any = {}
 
       if (addLabel(0))
         return p
 
-      function addIcon() {
-        const iconX = centroid[0] - (iconSize / 2)
-        const iconY = centroid[1] - (iconSize / 2)
-        const bbox = {
-          minX: iconX,
-          minY: iconY,
-          maxX: iconX + iconSize,
-          maxY: iconY + iconSize,
-        }
+      // function addIcon() {
+      //   const iconX = centroid[0] - (iconSize / 2)
+      //   const iconY = centroid[1] - (iconSize / 2)
+      //   const bbox = {
+      //     minX: iconX,
+      //     minY: iconY,
+      //     maxX: iconX + iconSize,
+      //     maxY: iconY + iconSize,
+      //   }
 
-        if (tryInsert([bbox], `${entity.id}I`, true)) {
-          p.transform = `translate(${iconX},${iconY})`
-          return true
-        }
-        return false
-      }
+      //   if (tryInsert([bbox], `${entity.id}I`, true)) {
+      //     p.transform = `translate(${iconX},${iconY})`
+      //     return true
+      //   }
+      //   return false
+      // }
 
       function addLabel(yOffset: number) {
         if (width && areaWidth >= width + 20) {
@@ -380,7 +384,7 @@ export function svgLabels(projection: any, context: any) {
         if (reverse(sub))
           sub = sub.reverse()
 
-        const bboxes = []
+        const bboxes: any = []
         const boxsize = (height + 2) / 2
 
         for (let j = 0; j < sub.length - 1; j++) {

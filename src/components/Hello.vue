@@ -1,8 +1,5 @@
 <script lang="ts" setup>
-import { useMouse } from '@vueuse/core'
 import D3Force from '/@/components/D3Force/scr/D3Force.vue'
-
-const { x, y } = useMouse()
 </script>
 
 <template>
@@ -11,4 +8,5 @@ const { x, y } = useMouse()
   <D3Force />
 </template>
 
-<style scoped></style>
+<style scoped>
+</style>

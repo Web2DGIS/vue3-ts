@@ -9,7 +9,7 @@ export default defineComponent({
   setup(props, { emit }) {
     const { items } = props
 
-    async function handleMenuClick({ key }: { key: string }) {
+    async function handleMenuClick({ key }: { key?: string }) {
       const { beforeClickFn } = props
       if (beforeClickFn && typeof beforeClickFn === 'function') {
         const flag = await beforeClickFn(key)
@@ -28,7 +28,8 @@ export default defineComponent({
 </script>
 
 <template>
-  <div class="basic-menu" @click="handleMenuClick" />
+  <div class="basic-menu" />
 </template>
 
-<style></style>
+<style>
+</style>

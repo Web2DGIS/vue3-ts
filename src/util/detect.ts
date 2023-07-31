@@ -6,7 +6,7 @@ export function utilDetect(refresh?: any) {
   _detected = {}
 
   const ua = navigator.userAgent
-  let m = null
+  let m: any = null
 
   /* Browser */
   m = ua.match(/(edge)\/?\s*(\.?\d+(\.\d+)*)/i) // Edge
@@ -95,13 +95,15 @@ export function utilDetect(refresh?: any) {
       .concat(navigator.languages || [])
       .concat([
         // old property for backwards compatibility
-        navigator.userLanguage,
+        navigator.language,
       ])
     // remove any undefined values
       .filter(Boolean),
   ))
 
   /* Host */
+  if (!window.top)
+    return
   const loc = window.top.location
   let origin = loc.origin
   if (!origin) { // for unpatched IE11

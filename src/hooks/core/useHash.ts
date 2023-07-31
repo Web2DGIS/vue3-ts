@@ -1,9 +1,9 @@
 import _throttle from 'lodash-es/throttle'
 import * as d3 from 'd3'
-import { utilQsString, utilStringQs } from '../../util'
-import { utilObjectOmit } from '../../util/object'
-import { prefs } from '../../util/preferences'
-import { MAP_LOCATION } from '../../enums/cacheEnum'
+import { utilQsString, utilStringQs } from '/@/util'
+import { utilObjectOmit } from '/@/util/object'
+import { prefs } from '/@/util/preferences'
+import { MAP_LOCATION } from '/@/enums/cacheEnum'
 
 export function behaviorHash(context?: any) {
   const map: any = context.map
@@ -61,18 +61,12 @@ export function behaviorHash(context?: any) {
   function behavior() {
     map.on('moveend', _throttledUpdate)
     d3.select(window).on('hashchange.behaviorHash', hashchange)
-    const q = utilStringQs(window.location.hash)
 
-    if (q.map) {
-      behavior.hadLocation = true
-    }
-    else if (prefs(MAP_LOCATION)) {
+    if (prefs(MAP_LOCATION)) {
       const mapArgs = prefs(MAP_LOCATION).split('/').map(Number)
       map.setView([Math.min(_latitudeLimit, Math.max(-_latitudeLimit, mapArgs[1])), mapArgs[2]], mapArgs[0])
 
       updateHashIfNeeded()
-
-      behavior.hadLocation = true
     }
 
     hashchange()

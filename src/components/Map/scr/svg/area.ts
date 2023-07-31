@@ -17,7 +17,9 @@ export function svgAreas(projection: any, content: Content) {
 
     for (let i = 0; i < areas.length; i++)
       areas[i].area = Math.abs(area(areas[i]))
-    areas.sort((a: any, b: any) => { return a.area - b.area })
+    areas.sort((a: any, b: any) => {
+      return a.area - b.area
+    })
 
     // area clipPath
     const path = d3_geoPath()

@@ -9,6 +9,9 @@ import type {
 } from 'vue';
 
 declare global {
+  interface Window {
+    MSStream: any;
+  }
   const __APP_INFO__: {
     pkg: {
       name: string;
@@ -89,11 +92,4 @@ declare module 'vue' {
   export type JSXComponent<Props = any> =
     | { new (): ComponentPublicInstance<Props> }
     | FunctionalComponent<Props>;
-}
-
-declare interface window {
-  top: {
-    location: any
-  },
-  MSStream: any
 }

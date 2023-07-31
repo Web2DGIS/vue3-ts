@@ -14,7 +14,6 @@ import {
   geoVecAngle,
   geoVecLength,
 } from '/@/geo/vector'
-import { unref } from 'vue'
 import type { GeoJSON } from './types'
 import { GeometryTypeEnum } from '/@/enums/geometryTypeEnum'
 import { typhoonLevel } from '/@/data'
@@ -109,7 +108,7 @@ export function area(entity: GeoJSON) {
   return Number.isNaN(area) ? 0 : area
 }
 
-export function layerInfo(feature: GeoJSON) {
+export function layerInfo(feature: any) {
   const { properties, geometry } = feature
   const legend = d3.select('.legend')
 
@@ -155,11 +154,11 @@ Array<Array<number>> {
   const radius = cradius / 100
   const pointNum = 90
   const endAngle = startAngle + 90
-  const points = []
+  const points: Array<Array<number>> = []
   let sin
   let cos
-  let x
-  let y
+  let x: number
+  let y: number
   let angle
 
   for (let i = 0; i <= pointNum; i++) {
@@ -194,8 +193,13 @@ const nationalColor: any = {
   美国: '#FF9800',
 }
 
-const typhoonCenters: Array<any> = []
+/**
+ * 台风所属的所有地图图层
+ */
+const typhoonLayers = L.featureGroup()
+
 export function redrawTyphoon(url: string, map: any) {
+  typhoonLayers.clearLayers()
   const request = new XMLHttpRequest()
   request.onreadystatechange = function () { // 状态发生变化时，函数被回调
     if (request.readyState === 4) { // 成功完成
@@ -240,9 +244,13 @@ export function redrawTyphoon(url: string, map: any) {
               iconSize: [40, 40],
               className: 'typhoon-marker-gif',
             })
+            const time = new Date(point.time)
+
             marker = L.marker(L.latLng(Number(point.lat), Number(point.lng)), {
               icon,
-            }).bindTooltip(`<b style="color: ${typhoonLevel[point.strong]}">${name}</b> ${point.time}`, { permanent: true })
+            }).bindTooltip(`
+            <b style="color: ${typhoonLevel[point.strong]}">${name}</b> (${time.getMonth() + 1}月${time.getDate()}日${time.getHours()}时)`,
+            { permanent: true })
             const startAngle = [0, 90, 180, 270]
 
             for (const key of Object.keys(point)) {
@@ -263,6 +271,7 @@ export function redrawTyphoon(url: string, map: any) {
                   color: numColor[key],
                   weight: 1,
                   className: 'typhoon-circle',
+                  fillOpacity: 0.4,
                 }).bindPopup(
                   `
                   <p>${radiusName[key]}风圈</p>
@@ -271,7 +280,7 @@ export function redrawTyphoon(url: string, map: any) {
                   `,
                 ).addTo(map)
 
-                typhoonCenters.push(polygon)
+                typhoonLayers.addLayer(polygon)
                 drawForecast(point.forecast, map)
               }
             }
@@ -280,14 +289,12 @@ export function redrawTyphoon(url: string, map: any) {
             marker = drawTyphoonMarker(point, 6)
           }
           marker.bindPopup(bindPopupContent)
-          typhoonCenters.push(marker)
+          typhoonLayers.addLayer(marker)
 
           return [Number(point.lng), Number(point.lat)]
         })
         L.GeoJSON.geometryToLayer(geoJSON).addTo(map)
-        typhoonCenters.forEach((e) => {
-          e.addTo(map)
-        })
+        typhoonLayers.addTo(map)
       }
     }
     else {
@@ -309,7 +316,6 @@ function drawTyphoonMarker(point: any, weight: number): any {
 function drawForecast(forecast: Array<any>, map: any) {
   if (!forecast.length)
     return
-  const layers: Array<any> = []
   forecast.forEach(({ tm, forecastpoints }) => {
     const latlngs = forecastpoints.map((point: any) => {
       const marker = drawTyphoonMarker(point, 6)
@@ -319,12 +325,9 @@ function drawForecast(forecast: Array<any>, map: any) {
       <p>风   力: ${point.power}级</p>
       `
       marker.bindPopup(bindPopupContent)
-      layers.push(marker)
+      typhoonLayers.addLayer(marker)
       return [Number(point.lat), Number(point.lng)]
     })
     L.polyline(latlngs, { weight: 0.8, dashArray: [10, 6], color: nationalColor[tm] }).addTo(map)
-  })
-  layers.forEach((layer) => {
-    layer.addTo(unref(map))
   })
 }
