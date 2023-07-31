@@ -174,6 +174,26 @@ Array<Array<number>> {
   return points
 }
 
+const radiusName: any = {
+  radius7: '七级',
+  radius10: '十级',
+  radius12: '十二级',
+}
+
+const numColor: any = {
+  radius7: 'rgb(0, 176, 15)',
+  radius10: 'rgb(248, 213, 0)',
+  radius12: 'rgb(255, 0, 0)',
+}
+
+const nationalColor: any = {
+  中国: '#F44336',
+  中国香港: '#9C27B0',
+  中国台湾: '#2196F3',
+  日本: '#009688',
+  美国: '#FF9800',
+}
+
 const typhoonCenters: Array<any> = []
 export function redrawTyphoon(url: string, map: any) {
   const request = new XMLHttpRequest()
@@ -212,8 +232,6 @@ export function redrawTyphoon(url: string, map: any) {
           bindPopupContent += Array.isArray(radius10) ? `<p>十级半径: ${Math.min(...radius10)}~${Math.max(...radius10)}</p>` : ''
           bindPopupContent += Array.isArray(radius12) ? `<p>十二级半径: ${Math.min(...radius12)}~${Math.max(...radius12)}</p>` : ''
           if (index-- === 0) {
-            console.log(point)
-
             bindPopupContent += point.ckposition ? `<p>参考位置: <b>${point.ckposition}</b></p>` : ''
             bindPopupContent += point.jl ? `<p>未来趋势: <b>${point.jl}</b></p>` : ''
 
@@ -227,26 +245,15 @@ export function redrawTyphoon(url: string, map: any) {
             }).bindTooltip(`<b style="color: ${typhoonLevel[point.strong]}">${name}</b> ${point.time}`, { permanent: true })
             const startAngle = [0, 90, 180, 270]
 
-            const numColor: any = {
-              radius7: 'rgb(0, 176, 15)',
-              radius10: 'rgb(248, 213, 0)',
-              radius12: 'rgb(255, 0, 0)',
-            }
-            const radiusName: any = {
-              radius7: '七级',
-              radius10: '十级',
-              radius12: '十二级',
-            }
-
             for (const key of Object.keys(point)) {
               if (key.includes('radius') && point[key]) {
                 const radius = point[key].split('|')
                 const lat = Number(point.lat)
                 const lng = Number(point.lng)
-                const se = getPoints([lat, lng], Number(radius[1]), startAngle[3]) // 东南
                 const ne = getPoints([lat, lng], Number(radius[0]), startAngle[0]) // 东北
                 const nw = getPoints([lat, lng], Number(radius[2]), startAngle[1]) // 西北
                 const sw = getPoints([lat, lng], Number(radius[3]), startAngle[2]) // 西南
+                const se = getPoints([lat, lng], Number(radius[1]), startAngle[3]) // 东南
                 const polygon = L.polygon([
                   ...se, ...ne, ...nw, ...sw,
                 ],
@@ -297,14 +304,6 @@ function drawTyphoonMarker(point: any, weight: number): any {
     color: typhoonLevel[point.strong],
     weight,
   })
-}
-
-const nationalColor: any = {
-  中国: '#F44336',
-  中国香港: '#9C27B0',
-  中国台湾: '#2196F3',
-  日本: '#009688',
-  美国: '#FF9800',
 }
 
 function drawForecast(forecast: Array<any>, map: any) {
