@@ -289,14 +289,7 @@ export function redrawTyphoon(url: string, map: any, _renderer: any) {
         })
         const weight = 2
         const line = L.polyline(coordinates, { renderer, className: 'path-my', weight })
-          .on('mouseover', ({ sourceTarget }) => {
-            const newWeight = weight * 2
-            sourceTarget.setStyle({ weight: newWeight })
-          })
-          .on('mouseout', ({ sourceTarget }) => {
-            sourceTarget.setStyle({ weight })
-          })
-        lineMouse(line, 1.5)
+        lineMouse(line, weight)
         line.addTo(map)
         typhoonLayers.addTo(map)
       }
