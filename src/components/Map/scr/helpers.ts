@@ -9,6 +9,8 @@ import {
 import turf_Area from '@turf/area'
 import turf_Length from '@turf/length'
 
+import '/@/leaflet/typhoon'
+
 import {
   geoVecAdd,
   geoVecAngle,
