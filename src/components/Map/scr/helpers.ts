@@ -173,16 +173,10 @@ Array<Array<number>> {
   return points
 }
 
-const radiusName: any = {
-  radius7: '七级',
-  radius10: '十级',
-  radius12: '十二级',
-}
-
-const numColor: any = {
-  radius7: 'rgb(0, 176, 15)',
-  radius10: 'rgb(248, 213, 0)',
-  radius12: 'rgb(255, 0, 0)',
+const radiusInfo: any = {
+  radius7: ['七级', 'rgb(0, 176, 15)'],
+  radius10: ['十级', 'rgb(248, 213, 0)'],
+  radius12: ['十二级', 'rgb(255, 0, 0)'],
 }
 
 const nationalColor: any = {
@@ -258,15 +252,15 @@ export function redrawTyphoon(url: string, map: any, _renderer: any) {
                 ],
                 {
                   smoothFactor: 0.1,
-                  fillColor: numColor[key],
-                  color: numColor[key],
+                  fillColor: radiusInfo[key][1],
+                  color: radiusInfo[key][1],
                   weight: 1,
                   className: 'typhoon-circle',
                   fillOpacity: 0.4,
                   renderer,
                 }).bindPopup(
                   `
-                  <p>${radiusName[key]}风圈</p>
+                  <p>${radiusInfo[key][0]}风圈</p>
                   <p>西北:${radius[2]} | 东北:${radius[0]}</p>
                   <p>西南:${radius[3]} | 东南:${radius[1]}</p>
                   `,
