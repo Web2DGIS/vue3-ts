@@ -10,7 +10,8 @@ declare module L {
   function circle(latlng: any, options?: any)
   function polygon(latlngs: any, options?: any)
   function polyline(latlngs: any, options?: any)
-  function featureGroup(layers?: Array<any>)
+  function featureGroup(layers?: Array<any>|null, options?: any)
+  function geoJSON(layers?: Array<any>|null, options?: any)
   const PolyUtil: any
   const LineUtil: any
 }

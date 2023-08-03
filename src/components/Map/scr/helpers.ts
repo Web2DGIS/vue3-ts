@@ -8,6 +8,12 @@ import {
 
 import turf_Area from '@turf/area'
 import turf_Length from '@turf/length'
+import turf_line_arc from '@turf/line-arc'
+import {
+  lineString as turf_lineString,
+  point as turf_point,
+} from '@turf/helpers'
+import turf_line_to_polygon from '@turf/line-to-polygon'
 
 import '/@/leaflet/typhoon'
 
@@ -192,13 +198,10 @@ const nationalColor: any = {
 /**
  * 台风所属的所有地图图层
  */
-const typhoonLayers = L.featureGroup()
+let typhoonLayers: any
 
-let renderer: any
-
-export function redrawTyphoon(url: string, map: any, _renderer: any) {
-  renderer = _renderer
-  typhoonLayers.clearLayers()
+export function redrawTyphoon(url: string, map: any, renderer: any) {
+  typhoonLayers = L.featureGroup(null, { renderer })
   const request = new XMLHttpRequest()
   request.onreadystatechange = function () { // 状态发生变化时，函数被回调
     if (request.readyState === 4) { // 成功完成
@@ -234,7 +237,6 @@ export function redrawTyphoon(url: string, map: any, _renderer: any) {
 
             marker = L.marker(L.latLng(Number(point.lat), Number(point.lng)), {
               icon,
-              renderer,
             }).bindTooltip(`
             <b style="color: ${typhoonLevel[point.strong]}">${name}</b> (${getDate(point.time)})`,
             { permanent: true })
@@ -245,14 +247,21 @@ export function redrawTyphoon(url: string, map: any, _renderer: any) {
                 const radius = point[key].split('|')
                 const lat = Number(point.lat)
                 const lng = Number(point.lng)
-                const ne = getPoints([lat, lng], Number(radius[0]), startAngle[0]) // 东北
-                const nw = getPoints([lat, lng], Number(radius[2]), startAngle[1]) // 西北
-                const sw = getPoints([lat, lng], Number(radius[3]), startAngle[2]) // 西南
-                const se = getPoints([lat, lng], Number(radius[1]), startAngle[3]) // 东南
-                const polygon = L.polygon([
-                  ...se, ...ne, ...nw, ...sw,
-                ],
-                {
+                const pt = turf_point([lng, lat])
+
+                // 0: 东北, 1: 东南，2: 西南, 3: 西北
+                const ne = turf_line_arc(pt, Number(radius[0]), startAngle[0], 89.9) // 东北
+                const se = turf_line_arc(pt, Number(radius[1]), startAngle[1], 179.9) // 东南
+                const nw = turf_line_arc(pt, Number(radius[2]), startAngle[3], 360.1) // 西北
+                const sw = turf_line_arc(pt, Number(radius[3]), startAngle[2], 269.9) // 西南
+
+                const geoJSONS = [ne, se, sw, nw]
+                const typhoonCircleCoords: Array<any> = []
+                geoJSONS.forEach((geoJSON) => {
+                  typhoonCircleCoords.push(...geoJSON.geometry.coordinates)
+                })
+
+                const style = {
                   smoothFactor: 0.1,
                   fillColor: radiusInfo[key][1],
                   color: radiusInfo[key][1],
@@ -260,14 +269,18 @@ export function redrawTyphoon(url: string, map: any, _renderer: any) {
                   className: 'typhoon-circle',
                   fillOpacity: 0.4,
                   renderer,
-                }).bindPopup(
-                  `
-                  <p>${radiusInfo[key][0]}风圈</p>
-                  <p>西北:${radius[2]} | 东北:${radius[0]}</p>
-                  <p>西南:${radius[3]} | 东南:${radius[1]}</p>
-                  `,
-                ).addTo(map)
+                }
 
+                const lineAll = turf_lineString(typhoonCircleCoords)
+                const polygon = L.GeoJSON.geometryToLayer(turf_line_to_polygon(lineAll))
+                  .setStyle(style)
+                  .bindPopup(
+                    `
+                    <p>${radiusInfo[key][0]}风圈</p>
+                    <p>西北:${radius[2]} | 东北:${radius[0]}</p>
+                    <p>西南:${radius[3]} | 东南:${radius[1]}</p>
+                    `,
+                  )
                 typhoonLayers.addLayer(polygon)
                 drawForecast(point.forecast, map)
               }
@@ -284,7 +297,7 @@ export function redrawTyphoon(url: string, map: any, _renderer: any) {
           return [Number(point.lat), Number(point.lng)]
         })
         const weight = 2
-        const line = L.polyline(coordinates, { renderer, className: 'path-my', weight })
+        const line = L.polyline(coordinates, { className: 'path-my', weight })
         lineMouse(line, weight)
         line.addTo(map)
         typhoonLayers.addTo(map)
@@ -314,7 +327,6 @@ function drawTyphoonMarker(point: any, weight: number): any {
   return L.circle(L.latLng(Number(point.lat), Number(point.lng)), {
     color: typhoonLevel[point.strong],
     weight,
-    renderer,
   })
     .on('mouseover', ({ sourceTarget }) => {
       const newWeight = weight + weight
@@ -347,7 +359,7 @@ function drawForecast(forecast: Array<any>, map: any) {
       return [Number(point.lat), Number(point.lng)]
     })
     const weight = 1
-    const line = L.polyline(latlngs, { weight, dashArray: [10, 6], color: nationalColor[tm], renderer })
+    const line = L.polyline(latlngs, { weight, dashArray: [10, 6], color: nationalColor[tm] })
     lineMouse(line, weight)
     line.addTo(map)
   })
