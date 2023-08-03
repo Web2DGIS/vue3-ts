@@ -198,30 +198,21 @@ const nationalColor: any = {
  */
 const typhoonLayers = L.featureGroup()
 
-export function redrawTyphoon(url: string, map: any) {
+let renderer: any
+
+export function redrawTyphoon(url: string, map: any, _renderer: any) {
+  renderer = _renderer
   typhoonLayers.clearLayers()
   const request = new XMLHttpRequest()
   request.onreadystatechange = function () { // 状态发生变化时，函数被回调
     if (request.readyState === 4) { // 成功完成
       // 判断响应结果:
       if (request.status === 200) {
-        const { name, enname, points, tfid } = JSON.parse(request.response)
-        const geoJSON = {
-          type: 'Feature',
-          geometry: {
-            type: 'LineString',
-            coordinates: undefined,
-          },
-          properties: {
-            name,
-            enname,
-            highway: 'typhoon',
-          },
-          wid: `typhoon-${enname}`,
-        }
+        const { name, points, tfid } = JSON.parse(request.response)
+        let coordinates = []
         let index = points.length - 1
         let bindPopupContent
-        geoJSON.geometry.coordinates = points.map((point: any) => {
+        coordinates = points.map((point: any) => {
           let marker
           bindPopupContent = `<p style=""><b>${name}</b> ${getDate(point.time)}</p>
             <p>风速风力: ${point.speed} 米/秒,<b style="color: ${typhoonLevel[point.strong]}">${point.power}级(${point.strong})</b></p>
@@ -247,6 +238,7 @@ export function redrawTyphoon(url: string, map: any) {
 
             marker = L.marker(L.latLng(Number(point.lat), Number(point.lng)), {
               icon,
+              renderer,
             }).bindTooltip(`
             <b style="color: ${typhoonLevel[point.strong]}">${name}</b> (${getDate(point.time)})`,
             { permanent: true })
@@ -271,6 +263,7 @@ export function redrawTyphoon(url: string, map: any) {
                   weight: 1,
                   className: 'typhoon-circle',
                   fillOpacity: 0.4,
+                  renderer,
                 }).bindPopup(
                   `
                   <p>${radiusName[key]}风圈</p>
@@ -292,9 +285,19 @@ export function redrawTyphoon(url: string, map: any) {
           marker.bindPopup(bindPopupContent)
           typhoonLayers.addLayer(marker)
 
-          return [Number(point.lng), Number(point.lat)]
+          return [Number(point.lat), Number(point.lng)]
         })
-        L.GeoJSON.geometryToLayer(geoJSON).addTo(map)
+        const weight = 2
+        const line = L.polyline(coordinates, { renderer, className: 'path-my', weight })
+          .on('mouseover', ({ sourceTarget }) => {
+            const newWeight = weight * 2
+            sourceTarget.setStyle({ weight: newWeight })
+          })
+          .on('mouseout', ({ sourceTarget }) => {
+            sourceTarget.setStyle({ weight })
+          })
+        lineMouse(line, 1.5)
+        line.addTo(map)
         typhoonLayers.addTo(map)
       }
     }
@@ -307,13 +310,25 @@ export function redrawTyphoon(url: string, map: any) {
   request.send()
 }
 
+function lineMouse(line: any, weight: number) {
+  line
+    .on('mouseover', ({ sourceTarget }) => {
+      const newWeight = weight + weight
+      sourceTarget.setStyle({ weight: newWeight })
+    })
+    .on('mouseout', ({ sourceTarget }) => {
+      sourceTarget.setStyle({ weight })
+    })
+}
+
 function drawTyphoonMarker(point: any, weight: number): any {
   return L.circle(L.latLng(Number(point.lat), Number(point.lng)), {
     color: typhoonLevel[point.strong],
     weight,
+    renderer,
   })
     .on('mouseover', ({ sourceTarget }) => {
-      const newWeight = weight + 6
+      const newWeight = weight + weight
       sourceTarget.setStyle({ weight: newWeight })
     })
     .on('mouseout', ({ sourceTarget }) => {
@@ -342,6 +357,9 @@ function drawForecast(forecast: Array<any>, map: any) {
       typhoonLayers.addLayer(marker)
       return [Number(point.lat), Number(point.lng)]
     })
-    L.polyline(latlngs, { weight: 0.8, dashArray: [10, 6], color: nationalColor[tm] }).addTo(map)
+    const weight = 1
+    const line = L.polyline(latlngs, { weight, dashArray: [10, 6], color: nationalColor[tm], renderer })
+    lineMouse(line, weight)
+    line.addTo(map)
   })
 }

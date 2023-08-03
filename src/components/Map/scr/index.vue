@@ -141,17 +141,17 @@ export default defineComponent({
       svg.value = d3.select(map.getPanes().overlayPane)
         .select('svg')
         .attr('pointer-events', 'auto')
-
+      const _renderer = unref(renderer)
       // init lineLayer
       lineJSON.value = L.geoJSON(null, {
-        renderer: unref(renderer),
+        renderer: _renderer,
         style: lineJSONStyle,
       }).on('click', (e: any) => {
         layerInfo(e.layer.feature)
       }).addTo(map)
       // init areaLayer
       areaJSON.value = L.geoJSON(null, {
-        renderer: unref(renderer),
+        renderer: _renderer,
         style: areaJSONStyle,
       }).on('click', (e: any) => {
         layerInfo(e.layer.feature)
@@ -171,7 +171,7 @@ export default defineComponent({
       svgLabel.value = svgLabels(projection, { map })
       const urls = ['https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202306']
       urls.forEach((url) => {
-        redrawTyphoon(url, map)
+        redrawTyphoon(url, map, _renderer)
       })
     }
 
