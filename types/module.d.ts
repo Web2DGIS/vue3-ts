@@ -2,9 +2,6 @@ declare module L {
   function latLng(x, y)
   function bounds(_northEast, _southWest)
   function geoJSON(geoJson, options)
-  const GeoJSON: {
-    geometryToLayer
-  } 
   function marker(latlng: any, options?: any)
   function divIcon(options?: any)
   function circle(latlng: any, options?: any)
@@ -12,6 +9,7 @@ declare module L {
   function polyline(latlngs: any, options?: any)
   function featureGroup(layers?: Array<any>|null, options?: any)
   function geoJSON(layers?: Array<any>|null, options?: any)
+  const GeoJSON: any
   const PolyUtil: any
   const LineUtil: any
 }
