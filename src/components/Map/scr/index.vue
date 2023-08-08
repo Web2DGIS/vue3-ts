@@ -169,7 +169,12 @@ export default defineComponent({
       svgLine.value = svgLines(projection, { map, JSON: unref(lineJSON) })
       svgPoint.value = svgPoints({ map })
       svgLabel.value = svgLabels(projection, { map })
-      const urls = ['https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202306']
+      const urls = [
+        // 'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202304',
+        // 'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202305',
+        'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202306',
+        'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202307',
+      ]
       urls.forEach((url) => {
         redrawTyphoon(url, map, _renderer)
       })
