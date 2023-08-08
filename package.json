@@ -22,6 +22,8 @@
     "@turf/area": "^6.5.0",
     "@turf/helpers": "^6.5.0",
     "@turf/length": "^6.5.0",
+    "@turf/line-arc": "^6.5.0",
+    "@turf/line-to-polygon": "^6.5.0",
     "@turf/truncate": "^6.5.0",
     "@vueuse/core": "^10.2.1",
     "alif-toolkit": "^1.2.9",

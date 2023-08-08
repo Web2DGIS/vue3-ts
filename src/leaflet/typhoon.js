@@ -1,7 +1,10 @@
 (function () {
   L.Typhoon = L.Polygon.extend({
     initialize(t, e, i) {
-      L.Polygon.prototype.initialize.call(this, e), this._latlng = L.latLng(t), this._circle = e, this._style = i
+      L.Polygon.prototype.initialize.call(this, e)
+      this._latlng = L.latLng(t)
+      this._circle = e
+      this._style = i
     },
     options: { fill: !0 },
     projectLatlngs() {
