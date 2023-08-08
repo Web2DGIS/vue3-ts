@@ -186,6 +186,7 @@ export const typhoonLevel: Array<string> = [
   '#fff',
   '#fff',
   '#fff',
+  '#fff',
   '#52c41a',
   '#52c41a',
   '#1677ff',
