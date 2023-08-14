@@ -233,6 +233,12 @@ let typhooPolygonLayers: any
 let typhooMakerLayers: any
 
 function init(map: any, renderer: any) {
+  if (typhooLineLayers) {
+    typhooLineLayers.clearLayers()
+    typhooPolygonLayers.clearLayers()
+    typhooMakerLayers.clearLayers()
+  }
+
   typhooLineLayers = L.featureGroup(null, { renderer }).addTo(map)
   typhooPolygonLayers = L.featureGroup(null, { renderer }).addTo(map)
   typhooMakerLayers = L.featureGroup(null, { renderer }).addTo(map)

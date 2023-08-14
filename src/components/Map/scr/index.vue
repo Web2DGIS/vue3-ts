@@ -172,12 +172,18 @@ export default defineComponent({
       const urls = [
         // 'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202304',
         // 'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202305',
-        'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202306',
+        // 'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202306',
         'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202307',
+        'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202308',
       ]
       urls.forEach((url) => {
         redrawTyphoon(url, map, _renderer)
       })
+      setInterval(() => {
+        urls.forEach((url) => {
+          redrawTyphoon(url, map, _renderer)
+        })
+      }, 120000)
     }
 
     function redraw() {
