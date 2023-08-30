@@ -173,8 +173,10 @@ export default defineComponent({
         // 'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202304',
         // 'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202305',
         // 'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202306',
-        'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202307',
-        'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202308',
+        // 'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202307',
+        // 'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202308',
+        'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202309',
+        'https://typhoon.slt.zj.gov.cn/Api/TyphoonInfo/202311',
       ]
       urls.forEach((url) => {
         redrawTyphoon(url, map, _renderer)
