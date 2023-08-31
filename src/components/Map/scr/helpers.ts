@@ -186,6 +186,7 @@ export const typhoonLevel: Array<string> = [
   '#fff',
   '#fff',
   '#fff',
+  '#fff',
   '#52c41a',
   '#52c41a',
   '#1677ff',
@@ -232,6 +233,12 @@ let typhooPolygonLayers: any
 let typhooMakerLayers: any
 
 function init(map: any, renderer: any) {
+  if (typhooLineLayers) {
+    typhooLineLayers.clearLayers()
+    typhooPolygonLayers.clearLayers()
+    typhooMakerLayers.clearLayers()
+  }
+
   typhooLineLayers = L.featureGroup(null, { renderer }).addTo(map)
   typhooPolygonLayers = L.featureGroup(null, { renderer }).addTo(map)
   typhooMakerLayers = L.featureGroup(null, { renderer }).addTo(map)
@@ -284,16 +291,16 @@ export function redrawTyphoon(url: string, map: any, renderer: any) {
 
             for (const key of Object.keys(point)) {
               if (key.includes('radius') && point[key]) {
-                const radius = point[key].split('|')
-                const lat = Number(point.lat)
-                const lng = Number(point.lng)
+                const radius: Array<number> = point[key].split('|')
+                const lat: number = point.lat
+                const lng: number = point.lng
                 const pt = turf_point([lng, lat])
 
                 // 0: 东北, 1: 东南，2: 西南, 3: 西北
-                const ne = turf_line_arc(pt, Number(radius[0]), startAngle[0], 89.9) // 东北
-                const se = turf_line_arc(pt, Number(radius[1]), startAngle[1], 179.9) // 东南
-                const nw = turf_line_arc(pt, Number(radius[2]), startAngle[3], 360.1) // 西北
-                const sw = turf_line_arc(pt, Number(radius[3]), startAngle[2], 269.9) // 西南
+                const ne = turf_line_arc(pt, radius[0], startAngle[0], 89.9) // 东北
+                const se = turf_line_arc(pt, radius[1], startAngle[1], 179.9) // 东南
+                const nw = turf_line_arc(pt, radius[2], startAngle[3], 360.1) // 西北
+                const sw = turf_line_arc(pt, radius[3], startAngle[2], 269.9) // 西南
 
                 const geoJSONS = [ne, se, sw, nw]
                 const typhoonCircleCoords: Array<any> = []
